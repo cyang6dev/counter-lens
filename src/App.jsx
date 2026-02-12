@@ -6,11 +6,11 @@ import {
 } from 'recharts';
 import {
   Settings, GraduationCap, Target, RefreshCw, Fingerprint, ShieldAlert,
-  HelpCircle, Info, Globe, User, ExternalLink, X, ChevronRight, School, Database, BookOpen, BarChart3
+  HelpCircle, Info, Globe, User, ExternalLink, X, ChevronRight, School, Database, BookOpen, BarChart3, Activity
 } from 'lucide-react';
 
 /**
- * AI/ML Ethics Lab - Berkeley Admission Simulator V2.0
+ * AI/ML Ethics Lab - Berkeley Admission Simulator V2.1
  * * Final Polish:
  * 1. Fixed rendering bug (ensured default export).
  * 2. Pixel-Perfect Horizon Alignment: Footers (Lab Guide, Results, Ethics Alert) aligned at h-24.
@@ -28,7 +28,7 @@ const COLORS = {
 
 const TRANSLATIONS = {
   en: {
-    title: "What-If Lab",
+    title: "What-If Lab UMBC",
     accuracy: "Model Accuracy",
     params: "Parameters",
     threshold: "Threshold",
@@ -69,7 +69,7 @@ const TRANSLATIONS = {
     axisSwap: "Swap Axes"
   },
   zh: {
-    title: "伦理实验室",
+    title: "What-If Lab UMBC",
     accuracy: "模型准确度",
     params: "模型参数调节",
     threshold: "录取门槛",
@@ -110,7 +110,7 @@ const TRANSLATIONS = {
     axisSwap: "轴向切换"
   },
   es: {
-    title: "Lab de Ética",
+    title: "What-If Lab UMBC",
     accuracy: "Precisión",
     params: "Parámetros",
     threshold: "Umbral",
@@ -382,7 +382,7 @@ const App = () => {
         <div className="flex items-center gap-3">
           <GraduationCap className="w-6 h-6 text-blue-500" />
           <h1 className="text-lg font-black text-white uppercase tracking-tight">{t.title}</h1>
-          <span className="text-[13px] text-slate-600 font-bold border-l border-slate-800 pl-3 uppercase tracking-widest">V2.0 LAB</span>
+          <span className="text-[13px] text-slate-600 font-bold border-l border-slate-800 pl-3 uppercase tracking-widest">V2.1 LAB</span>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => setShowCredits(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase bg-[#161b22] border border-slate-800 text-slate-400 hover:text-blue-400 transition-all"><Info className="w-3.5 h-3.5" /> {t.aboutBtn}</button>
@@ -416,13 +416,15 @@ const App = () => {
                     <span>{t.threshold}</span>
                     <button onClick={() => setExplainer('threshold')} className="text-slate-600 hover:text-blue-400 transition-colors"><HelpCircle className="w-3 h-3" /></button>
                   </div>
-                  <div className="flex flex-col items-end">
+                  <div className="flex flex-col items-end h-8 justify-center">
                     <span className="text-blue-500 font-black text-sm leading-none">{threshold}</span>
-                    {boundaryVal !== null && (
-                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter mt-0.5">
-                        {!swapAxes ? `Cutoff: SAT ≈ ${Math.round(boundaryVal)}` : `Cutoff: GPA ≈ ${boundaryVal.toFixed(2)}`}
-                      </span>
-                    )}
+                    <div className="h-3.5 flex items-center">
+                      {boundaryVal !== null && (
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">
+                          {!swapAxes ? `Cutoff: SAT ≈ ${Math.round(boundaryVal)}` : `Cutoff: GPA ≈ ${boundaryVal.toFixed(2)}`}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <input type="range" min="30" max="95" value={threshold} onChange={(e) => setThreshold(parseInt(e.target.value))} className="w-full h-1 bg-slate-800 rounded-full accent-blue-500 cursor-pointer" />
@@ -453,7 +455,7 @@ const App = () => {
           <div className="bg-blue-600 rounded-2xl p-3 text-white shadow-xl relative overflow-hidden h-28 flex-shrink-0 flex flex-col justify-between">
             <div className="relative z-10 flex flex-col h-full">
               <div className="flex justify-between items-center mb-1">
-                <p className="font-black text-xs tracking-widest uppercase opacity-70">{t.labGuide}</p>
+                <p className="font-black text-xs tracking-widest uppercase opacity-70 flex items-center gap-2"><BookOpen className="w-3 h-3" /> {t.labGuide}</p>
                 <button onClick={() => setTipIndex((tipIndex + 1) % LAB_TIPS[lang].length)} className="p-1 hover:bg-white/20 rounded-full flex items-center gap-0.5 text-[11px] font-black uppercase">
                   {t.nextTip} <ChevronRight className="w-3 h-3" />
                 </button>
@@ -470,7 +472,7 @@ const App = () => {
             <div className="flex flex-col mb-1">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-[13px] font-black text-slate-500 uppercase tracking-widest">{t.visualizer}</h3>
+                  <h3 className="text-[13px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2"><Activity className="w-3 h-3" /> {t.visualizer}</h3>
                   <button onClick={() => setSwapAxes(!swapAxes)} className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase hover:bg-blue-500/20 transition-all">
                     <RefreshCw className={`w-2.5 h-2.5 ${swapAxes ? 'rotate-180' : ''} transition-transform`} /> {t.axisSwap}
                   </button>
@@ -623,7 +625,7 @@ const App = () => {
             </div>
             <div className="pt-3 border-t border-slate-800">
               <div className="flex justify-between items-center mb-2">
-                <p className="text-xs font-black text-slate-500 uppercase tracking-widest leading-none">{t.confusion}</p>
+                <p className="text-xs font-black text-slate-500 uppercase tracking-widest leading-none flex items-center gap-2"><Target className="w-3 h-3" /> {t.confusion}</p>
                 <button onClick={() => setExplainer('confusion')} className="text-slate-600 hover:text-blue-400 transition-colors"><HelpCircle className="w-3 h-3" /></button>
               </div>
               <div className="grid grid-cols-2 gap-1 text-center font-mono">
