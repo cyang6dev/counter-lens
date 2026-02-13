@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import './index.css';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -321,6 +321,22 @@ const App = () => {
     return isAdmitted(originalStudent) !== isAdmitted(cfProfile);
   }, [originalStudent, cfProfile, weights, threshold]);
 
+  const checkMatch = useCallback((entry) => {
+    if (!filterMode) return true;
+    const pred = isAdmitted(entry);
+    if (filterMode.type === 'confusion') {
+      const status = (pred && entry.label) ? 'TP' : (pred && !entry.label) ? 'FP' : (!pred && entry.label) ? 'FN' : 'TN';
+      return status === filterMode.value;
+    } else if (filterMode.type === 'slice') {
+      if (filterMode.value === t.athlete) return entry.isAthlete;
+      if (filterMode.value === t.firstGen) return entry.isFirstGen;
+      if (filterMode.value === t.resident) return entry.isResident;
+      if (filterMode.value === (lang === 'zh' ? '女性' : (lang === 'es' ? 'FEM' : 'Female'))) return entry.gender === 'Female';
+      if (filterMode.value === (lang === 'zh' ? '男性' : (lang === 'es' ? 'MASC' : 'Male'))) return entry.gender === 'Male';
+    }
+    return true;
+  }, [filterMode, weights, threshold, t, lang]);
+
   const hardSamples = useMemo(() => {
     if (!isMining) return [];
     return data
@@ -572,27 +588,16 @@ const App = () => {
                   >
                     {data.map((entry, index) => {
                       const pred = isAdmitted(entry);
-                      const isHard = hardSamples.some(h => h.id === entry.id);
-                      let isMatch = true;
-                      if (filterMode) {
-                        if (filterMode.type === 'confusion') {
-                          const status = (pred && entry.label) ? 'TP' : (pred && !entry.label) ? 'FP' : (!pred && entry.label) ? 'FN' : 'TN';
-                          isMatch = status === filterMode.value;
-                        } else if (filterMode.type === 'slice') {
-                          if (filterMode.value === t.athlete) isMatch = entry.isAthlete;
-                          else if (filterMode.value === t.firstGen) isMatch = entry.isFirstGen;
-                          else if (filterMode.value === t.resident) isMatch = entry.isResident;
-                          else if (filterMode.value === (lang === 'zh' ? '女性' : (lang === 'es' ? 'FEM' : 'Female'))) isMatch = entry.gender === 'Female';
-                          else if (filterMode.value === (lang === 'zh' ? '男性' : (lang === 'es' ? 'MASC' : 'Male'))) isMatch = entry.gender === 'Male';
-                        }
-                      }
+                      const isMatch = checkMatch(entry);
+                      const isHard = isMatch && hardSamples.some(h => h.id === entry.id);
+                      const isSelected = isMatch && selectedId === entry.id;
 
                       return (
                         <Cell
                           key={index}
                           fill={pred ? COLORS.admit : COLORS.reject}
-                          stroke={selectedId === entry.id ? 'white' : (isHard ? '#fbbf24' : 'transparent')}
-                          strokeWidth={isHard || selectedId === entry.id ? 2 : 1}
+                          stroke={isSelected ? 'white' : (isHard ? '#fbbf24' : 'transparent')}
+                          strokeWidth={isHard || isSelected ? 2 : 1}
                           opacity={isMatch ? 1 : 0.15}
                           className={isHard ? 'animate-pulse' : ''}
                           style={{
@@ -615,6 +620,7 @@ const App = () => {
                       filter: isCrossed ? 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.6))' : 'none'
                     }}
                     shape={() => null}
+                    opacity={checkMatch(originalStudent) ? 1 : 0.15}
                   />
 
                   {/* Current What-If Point (Larger/Glowing) */}
@@ -623,8 +629,9 @@ const App = () => {
                       fill={isAdmitted(cfProfile) ? COLORS.admit : COLORS.reject}
                       stroke="white"
                       strokeWidth={3}
-                      className={isCrossed ? 'animate-pulse' : ''}
-                      style={{ filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.4))' }}
+                      className={checkMatch(originalStudent) && isCrossed ? 'animate-pulse' : ''}
+                      opacity={checkMatch(originalStudent) ? 1 : 0.15}
+                      style={{ filter: checkMatch(originalStudent) ? 'drop-shadow(0 0 10px rgba(255,255,255,0.4))' : 'none' }}
                     />
                   </Scatter>
                 </ScatterChart>
