@@ -213,6 +213,7 @@ const App = () => {
   const [selectedId, setSelectedId] = useState(0);
   const [cfProfile, setCfProfile] = useState({ ...INITIAL_POOL[0] });
   const [swapAxes, setSwapAxes] = useState(false);
+  const [filterMode, setFilterMode] = useState(null); // { type: 'confusion'|'slice', value: string }
 
   const originalStudent = useMemo(() => data.find(s => s.id === selectedId) || data[0], [data, selectedId]);
 
@@ -275,8 +276,8 @@ const App = () => {
       groupStats: [
         { name: t.athlete, rate: Math.round(groups.athlete.a / groups.athlete.c * 100) || 0, count: groups.athlete.c },
         { name: t.firstGen, rate: Math.round(groups.firstGen.a / groups.firstGen.c * 100) || 0, count: groups.firstGen.c },
-        { name: lang === 'zh' ? '女性' : (lang === 'es' ? 'FEM' : 'Female'), rate: Math.round(groups.female.a / groups.female.c * 100) || 0, count: groups.female.c },
-        { name: lang === 'zh' ? '男性' : (lang === 'es' ? 'MASC' : 'Male'), rate: Math.round(groups.male.a / groups.male.c * 100) || 0, count: groups.male.c },
+        { name: t.female, rate: Math.round(groups.female.a / groups.female.c * 100) || 0, count: groups.female.c },
+        { name: t.male, rate: Math.round(groups.male.a / groups.male.c * 100) || 0, count: groups.male.c },
         { name: t.resident, rate: Math.round(groups.resident.a / groups.resident.c * 100) || 0, count: groups.resident.c }
       ]
     };
@@ -495,10 +496,37 @@ const App = () => {
                   {boundaryVal !== null && (
                     <ReferenceLine y={boundaryVal} stroke="#3b82f6" strokeDasharray="4 4" strokeWidth={1.5} label={{ position: 'right', value: t.decisionBoundary, fill: '#3b82f6', fontSize: 9, fontWeight: '900', letterSpacing: '0.1em' }} />
                   )}
-                  <Scatter data={data} onClick={(e) => e && e.id !== undefined && setSelectedId(e.id)}>
-                    {data.map((entry, index) => (
-                      <Cell key={index} fill={isAdmitted(entry) ? COLORS.admit : COLORS.reject} stroke={selectedId === entry.id ? 'white' : 'transparent'} strokeWidth={2} style={{ cursor: 'pointer', transition: 'all 0.3s ease' }} />
-                    ))}
+                  <Scatter
+                    data={data}
+                    onClick={(e) => e && e.id !== undefined && setSelectedId(e.id)}
+                  >
+                    {data.map((entry, index) => {
+                      const pred = isAdmitted(entry);
+                      let isMatch = true;
+                      if (filterMode) {
+                        if (filterMode.type === 'confusion') {
+                          const status = (pred && entry.label) ? 'TP' : (pred && !entry.label) ? 'FP' : (!pred && entry.label) ? 'FN' : 'TN';
+                          isMatch = status === filterMode.value;
+                        } else if (filterMode.type === 'slice') {
+                          if (filterMode.value === t.athlete) isMatch = entry.isAthlete;
+                          else if (filterMode.value === t.firstGen) isMatch = entry.isFirstGen;
+                          else if (filterMode.value === t.resident) isMatch = entry.isResident;
+                          else if (filterMode.value === (lang === 'zh' ? '女性' : (lang === 'es' ? 'FEM' : 'Female'))) isMatch = entry.gender === 'Female';
+                          else if (filterMode.value === (lang === 'zh' ? '男性' : (lang === 'es' ? 'MASC' : 'Male'))) isMatch = entry.gender === 'Male';
+                        }
+                      }
+
+                      return (
+                        <Cell
+                          key={index}
+                          fill={pred ? COLORS.admit : COLORS.reject}
+                          stroke={selectedId === entry.id ? 'white' : 'transparent'}
+                          strokeWidth={2}
+                          opacity={isMatch ? 1 : 0.15}
+                          style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+                        />
+                      );
+                    })}
                   </Scatter>
                 </ScatterChart>
               </ResponsiveContainer>
@@ -575,16 +603,35 @@ const App = () => {
         <section className="col-span-3 flex flex-col gap-3 min-h-0">
           <div className="bg-[#161b22] border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col overflow-hidden shadow-xl">
             <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
-              <h2 className="text-[13px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2"><BarChart3 className="w-3 h-3 text-purple-500" /> {t.slices}</h2>
+              <h2 className="text-[13px] font-black uppercase text-slate-500 tracking-widest flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="w-3 h-3 text-purple-500" /> {t.slices}
+                </div>
+                <span className="text-[10px] text-slate-600 font-bold lowercase">({t.groupRate})</span>
+              </h2>
             </div>
             <div className="flex-1 min-h-0 relative">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.groupStats} layout="vertical" margin={{ left: -5, right: 100, top: 10, bottom: 10 }}>
+                <BarChart
+                  data={stats.groupStats}
+                  layout="vertical"
+                  margin={{ left: -5, right: 100, top: 10, bottom: 10 }}
+                  onClick={(e) => {
+                    if (e && e.activeLabel) {
+                      const val = e.activeLabel;
+                      setFilterMode(prev => (prev?.type === 'slice' && prev?.value === val) ? null : { type: 'slice', value: val });
+                    }
+                  }}
+                >
                   <XAxis type="number" hide domain={[0, 100]} />
                   <YAxis dataKey="name" type="category" stroke="#484f58" fontSize={10} width={55} />
-                  <Bar dataKey="rate" radius={[0, 2, 2, 0]} fill={COLORS.barDefault}>
+                  <Bar dataKey="rate" radius={[0, 2, 2, 0]} fill={COLORS.barDefault} style={{ cursor: 'pointer' }}>
                     {stats.groupStats.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS.barDefault} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={filterMode?.type === 'slice' && filterMode?.value === entry.name ? '#3b82f6' : COLORS.barDefault}
+                        opacity={filterMode?.type === 'slice' && filterMode?.value !== entry.name ? 0.3 : 1}
+                      />
                     ))}
                     <LabelList
                       dataKey="rate"
@@ -612,7 +659,7 @@ const App = () => {
                         return (
                           <div className="bg-[#1c2128] border border-slate-700 p-2 rounded shadow-xl text-[10px] font-bold">
                             <p className="text-slate-200">{payload[0].payload.name}</p>
-                            <p className="text-blue-400">{t.admit}: {payload[0].value}%</p>
+                            <p className="text-blue-400">{t.groupRate}: {payload[0].value}%</p>
                             <p className="text-slate-400">Total Samples: {payload[0].payload.count}</p>
                           </div>
                         );
@@ -634,19 +681,23 @@ const App = () => {
                   { l: 'FP', v: stats.fp, r: stats.fpRate, c: 'amber', rgb: '245, 158, 11' },
                   { l: 'FN', v: stats.fn, r: stats.fnRate, c: 'rose', rgb: '239, 68, 68' },
                   { l: 'TN', v: stats.tn, r: stats.tnRate, c: 'slate', rgb: '71, 85, 105' }
-                ].map(m => (
-                  <div
-                    key={m.l}
-                    className={`p-1 rounded border border-${m.c}-500/20 shadow-sm transition-all duration-500`}
-                    style={{ backgroundColor: `rgba(${m.rgb}, ${Math.max(0.05, m.r / 100)})` }}
-                  >
-                    <p className={`text-[10px] text-${m.c}-400 uppercase font-black leading-none mb-1`}>{m.l}</p>
-                    <div className="flex flex-col gap-0.5">
-                      <p className="text-sm font-black text-white leading-none">{m.v}</p>
-                      <p className={`text-[9px] font-bold text-${m.c}-300/80 leading-none`}>{m.r}%</p>
+                ].map(m => {
+                  const isActive = filterMode?.type === 'confusion' && filterMode?.value === m.l;
+                  return (
+                    <div
+                      key={m.l}
+                      onClick={() => setFilterMode(prev => (prev?.type === 'confusion' && prev?.value === m.l) ? null : { type: 'confusion', value: m.l })}
+                      className={`p-1 rounded border shadow-sm transition-all duration-300 cursor-pointer ${isActive ? `border-${m.c}-400 ring-2 ring-${m.c}-500/20 scale-[1.02]` : `border-${m.c}-500/20 hover:border-${m.c}-500/40`}`}
+                      style={{ backgroundColor: isActive ? `rgba(${m.rgb}, 0.4)` : `rgba(${m.rgb}, ${Math.max(0.05, m.r / 100)})` }}
+                    >
+                      <p className={`text-[10px] ${isActive ? 'text-white' : `text-${m.c}-400`} uppercase font-black leading-none mb-1`}>{m.l}</p>
+                      <div className="flex flex-col gap-0.5">
+                        <p className={`text-sm font-black ${isActive ? 'text-white' : 'text-white'} leading-none`}>{m.v}</p>
+                        <p className={`text-[9px] font-bold ${isActive ? 'text-white/80' : `text-${m.c}-300/80`} leading-none`}>{m.r}%</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
