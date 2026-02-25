@@ -69,14 +69,23 @@ const TRANSLATIONS = {
     disparityMeter: "Disparity Meter",
     genderGap: "Gender Gap",
     yes: "YES", no: "NO", male: "MALE", female: "FEMALE", nonbinary: "NON-BINARY",
-    thresholdWiki: "https://en.wikipedia.org/wiki/Threshold_level",
+    thresholdWiki: "https://en.wikipedia.org/wiki/Threshold",
     confusionWiki: "https://en.wikipedia.org/wiki/Confusion_matrix",
     thresholdExplainer: "The threshold is the policy cutoff. A student's score is a weighted sum of attributes. Adjusting this represents changing admission standards.",
     confusionExplainer: "Compares decisions with 'hidden potential'. identifies successes and failures like 'False Negatives' (unfairly rejected).",
     scannerExplainer: "The Scanner continuously audits your model for algorithmic bias and systemic risks. It monitors the 'Accuracy Paradox', weight imbalances, and demographic disparities to ensure fairness.",
     scannerWiki: "https://en.wikipedia.org/wiki/Algorithmic_bias",
     learnMore: "Wikipedia",
-    axisSwap: "Swap Axes"
+    axisSwap: "Swap Axes",
+    margin: "Decision Margin (L2)",
+    marginWiki: "https://en.wikipedia.org/wiki/Euclidean_distance",
+    marginExplainer: "The Decision Margin (L2) represents the shortest distance from a student's profile to the admission boundary in a normalized feature space. A smaller margin indicates a 'fragile' decision where minor profile changes could flip the result.",
+    weightsWiki: "https://en.wikipedia.org/wiki/Coefficient",
+    weightsExplainer: "Weights define the relative importance of each feature. A high GPA weight means the model prioritizes academic history over other attributes like SAT or residency.",
+    inspectorWiki: "https://en.wikipedia.org/wiki/Feature_selection",
+    inspectorExplainer: "The Inspector allows you to examine a specific data point's attributes and see how they contribute to the final decision. It provides granular detail for individual audit.",
+    editorWiki: "https://en.wikipedia.org/wiki/Counterfactual_conditional",
+    editorExplainer: "The Editor enables you to manipulate features to see 'what if' the inputs were different. This helps in understanding the model's decision boundaries and sensitivity."
   },
   zh: {
     title: "What-If Lab UMBC",
@@ -106,7 +115,7 @@ const TRANSLATIONS = {
     datasetDesc: "受 1973 年加州大学伯克利分校录取数据集启发，用于探讨辛普森悖论与算法偏见。",
     department: "计算机科学与电气工程系 (CSEE)",
     college: "工程与信息技术学院",
-    university: "马里兰大学巴尔德摩县分校 (UMBC)",
+    university: "马里兰大学巴尔的摩郡分校 (UMBC)",
     visitLab: "访问实验室主页", visitDept: "访问系部官网",
     aboutBtn: "关于项目", decisionBoundary: "录取分界线",
     ethicsAlert: "伦理诊断扫描仪",
@@ -127,7 +136,16 @@ const TRANSLATIONS = {
     scannerExplainer: "伦理扫描仪实时审计模型的算法偏见与系统性风险。它会持续监控‘准确度悖论’、‘权重失衡’、‘群体不公’等核心指标，并提供实时诊断反馈。",
     scannerWiki: "https://zh.wikipedia.org/wiki/%E7%AE%97%E6%B3%95%E5%81%8F%E8%A7%81",
     learnMore: "维基百科",
-    axisSwap: "轴向切换"
+    axisSwap: "轴向切换",
+    margin: "决策余量 (L2 距离)",
+    marginWiki: "https://zh.wikipedia.org/wiki/%E6%AC%A7%E5%87%A0%E9%87%8C%E5%BE%97%E8%B7%9D%E7%A6%BB",
+    marginExplainer: "决策余量（L2 距离）代表了学生在标准化特征空间中距离录取边界线的最短距离。余量越小，说明该判定越‘脆弱’，微小的档案改动（如 SAT 波动）就可能逆转录取结果。",
+    weightsWiki: "https://zh.wikipedia.org/wiki/%E7%B3%BB%E6%95%B0",
+    weightsExplainer: "权重定义了每个特征的相对重要性。设置较高的 GPA 权重意味着模型在评估时会优先考虑学术历史，而非 SAT 或身份背景等其他指标。",
+    inspectorWiki: "https://zh.wikipedia.org/wiki/%E7%89%B9%E5%BE%81%E9%80%89%E6%8B%A9",
+    inspectorExplainer: "特征审查面板允许你深入检查特定数据点的各项属性，并观察它们如何共同决定最终的录取逻辑。这是对个体判定的精确审计。",
+    editorWiki: "https://zh.wikipedia.org/wiki/%E5%8F%8D%E4%BA%8B%E5%AE%9E%E6%9D%A1%E4%BB%B6",
+    editorExplainer: "反事实编辑器允许你模拟改变输入特征，观察‘如果当初不同’会如何影响判定。这能帮助你理解模型判定的敏感度和界限。"
   },
   es: {
     title: "What-If Lab UMBC",
@@ -369,6 +387,35 @@ const App = () => {
     return true;
   }, [filterMode, weights, threshold, t, lang]);
 
+  const getMargin = useCallback((p) => {
+    if (!p) return null;
+    const s = calcScore(p, weights);
+    const diff = s - threshold;
+
+    const g1 = weights.gpa / 100;
+    const g2 = weights.sat / 100;
+    const denomNorm = g1 * g1 + g2 * g2;
+
+    if (denomNorm === 0) return { margin: "0.00", projection: { gpa: p.gpa, sat: p.sat } };
+
+    const dist = Math.abs(diff) / Math.sqrt(denomNorm);
+
+    const A = weights.gpa / 1.5;
+    const B = weights.sat / 400;
+    const dRaw = A * A + B * B;
+    const xp = p.gpa - (A * diff) / dRaw;
+    const yp = p.sat - (B * diff) / dRaw;
+
+    return {
+      margin: dist.toFixed(2),
+      rawMargin: dist,
+      projection: { gpa: xp, sat: yp }
+    };
+  }, [weights, threshold]);
+
+  const marginStats = useMemo(() => getMargin(originalStudent), [originalStudent, getMargin]);
+  const cfMarginStats = useMemo(() => getMargin(cfProfile), [cfProfile, getMargin]);
+
   const hardSamples = useMemo(() => {
     if (!isMining) return [];
     return data
@@ -476,16 +523,34 @@ const App = () => {
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400"><BookOpen className="w-6 h-6" /></div>
                   <h3 className="text-xl font-black text-white uppercase tracking-tight">
-                    {explainer === 'threshold' ? t.threshold : explainer === 'confusion' ? t.confusion : t.ethicsAlert}
+                    {explainer === 'threshold' ? t.threshold :
+                      explainer === 'confusion' ? t.confusion :
+                        explainer === 'margin' ? t.margin :
+                          explainer === 'weights' ? t.weights :
+                            explainer === 'inspector' ? t.inspector :
+                              explainer === 'editor' ? t.editor :
+                                t.ethicsAlert}
                   </h3>
                 </div>
                 <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
                   <p className="text-slate-300 text-sm font-medium leading-relaxed">
-                    {explainer === 'threshold' ? t.thresholdExplainer : explainer === 'confusion' ? t.confusionExplainer : t.scannerExplainer}
+                    {explainer === 'threshold' ? t.thresholdExplainer :
+                      explainer === 'confusion' ? t.confusionExplainer :
+                        explainer === 'margin' ? t.marginExplainer :
+                          explainer === 'weights' ? t.weightsExplainer :
+                            explainer === 'inspector' ? t.inspectorExplainer :
+                              explainer === 'editor' ? t.editorExplainer :
+                                t.scannerExplainer}
                   </p>
                 </div>
                 <div className="pt-2 flex justify-between items-center">
-                  <a href={explainer === 'threshold' ? t.thresholdWiki : explainer === 'confusion' ? t.confusionWiki : t.scannerWiki} target="_blank" className="flex items-center gap-2 text-xs font-bold text-blue-400 hover:underline"><ExternalLink className="w-4 h-4" /> {t.learnMore}</a>
+                  <a href={explainer === 'threshold' ? t.thresholdWiki :
+                    explainer === 'confusion' ? t.confusionWiki :
+                      explainer === 'margin' ? t.marginWiki :
+                        explainer === 'weights' ? t.weightsWiki :
+                          explainer === 'inspector' ? t.inspectorWiki :
+                            explainer === 'editor' ? t.editorWiki :
+                              t.scannerWiki} target="_blank" className="flex items-center gap-2 text-xs font-bold text-blue-400 hover:underline"><ExternalLink className="w-4 h-4" /> {t.learnMore}</a>
                   <button onClick={() => setExplainer(null)} className="px-8 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-black uppercase transition-all">OK</button>
                 </div>
               </div>
@@ -505,7 +570,7 @@ const App = () => {
             <h1 className="text-lg font-black text-white uppercase tracking-tighter leading-none">{t.title}</h1>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-[10px] text-amber-500/80 font-black uppercase tracking-[0.2em] leading-none">Powered by UMBC</span>
-              <span className="text-[10px] text-slate-600 font-bold border-l border-slate-800 pl-2 uppercase tracking-widest leading-none">V2.1</span>
+              <span className="text-[10px] text-slate-400 font-bold border-l border-slate-800 pl-2 uppercase tracking-widest leading-none">V2.1</span>
             </div>
           </div>
         </div>
@@ -517,7 +582,7 @@ const App = () => {
             ))}
           </div>
           <div className="bg-slate-900 px-4 py-1 rounded-xl border border-slate-800 flex items-center gap-3">
-            <p className="text-xs text-slate-500 font-black uppercase">{t.accuracy}</p>
+            <p className="text-xs text-slate-400 font-black uppercase">{t.accuracy}</p>
             <p className="text-lg font-black text-blue-500">{stats.accuracy}%</p>
           </div>
         </div>
@@ -530,14 +595,17 @@ const App = () => {
         <section className="col-span-3 flex flex-col gap-3 min-h-0">
           <div className="bg-[#161b22] border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col gap-4 shadow-xl aurora-border">
             <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-              <h2 className="text-[13px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2"><Settings className="w-3 h-3 text-blue-500" /> {t.params}</h2>
+              <h2 className="text-[13px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Settings className="w-3 h-3 text-blue-500" /> {t.params}</h2>
               <div className={`text-[11px] font-mono font-black px-1.5 py-0.5 rounded border ${Object.values(weights).reduce((a, b) => a + b, 0) === 100 ? 'border-emerald-500 text-emerald-500' : 'border-amber-500 text-amber-500'}`}>Σ={Object.values(weights).reduce((a, b) => a + b, 0)}%</div>
             </div>
 
             <div className="flex-1 flex flex-col gap-4 overflow-hidden">
               <div className="space-y-1.5">
-                <div className="flex justify-between text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                  <span className="flex items-center gap-1"><GraduationCap className="w-3 h-3 text-rose-500" /> {t.threshold}</span>
+                <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <span className="flex items-center gap-1">
+                    <GraduationCap className="w-3 h-3 text-rose-500" /> {t.threshold}
+                    <button onClick={() => setExplainer('threshold')} className="text-slate-700 hover:text-blue-400 p-0.5 transition-colors"><HelpCircle className="w-2.5 h-2.5" /></button>
+                  </span>
                   <span className="text-rose-400 font-mono text-xs">{threshold}.0</span>
                 </div>
                 <input type="range" min="0" max="100" value={threshold} onChange={(e) => setThreshold(parseInt(e.target.value))} className="w-full" />
@@ -545,7 +613,10 @@ const App = () => {
 
               <div className="flex flex-col gap-2 min-h-0 flex-1">
                 <div className="flex flex-col gap-1.5">
-                  <h3 className="text-xs font-black text-slate-600 uppercase tracking-widest">{t.weights}</h3>
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                    {t.weights}
+                    <button onClick={() => setExplainer('weights')} className="text-slate-700 hover:text-blue-400 p-0.5 transition-colors"><HelpCircle className="w-2.5 h-2.5" /></button>
+                  </h3>
                   <div className="grid grid-cols-2 gap-1 px-0.5">
                     <button onClick={() => handleWeights('normalize')} className="text-[10px] bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95">{t.normalize}</button>
                     <button onClick={() => handleWeights('default')} className="text-[10px] bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95">{t.default}</button>
@@ -610,8 +681,8 @@ const App = () => {
               <ResponsiveContainer>
                 <ScatterChart margin={{ top: 10, right: 20, bottom: 0, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#21262d" vertical={false} />
-                  <XAxis type="number" dataKey={!swapAxes ? "gpa" : "sat"} domain={!swapAxes ? [2.0, 4.0] : [800, 1600]} stroke="#484f58" fontSize={10} tick={{ fontFamily: 'JetBrains Mono' }} />
-                  <YAxis type="number" dataKey={!swapAxes ? "sat" : "gpa"} domain={!swapAxes ? [800, 1600] : [2.0, 4.0]} stroke="#484f58" fontSize={10} tick={{ fontFamily: 'JetBrains Mono' }} />
+                  <XAxis type="number" dataKey={!swapAxes ? "gpa" : "sat"} domain={!swapAxes ? [2.0, 4.0] : [800, 1600]} stroke="#484f58" fontSize={10} tick={{ fontFamily: 'JetBrains Mono' }} allowDataOverflow={true} />
+                  <YAxis type="number" dataKey={!swapAxes ? "sat" : "gpa"} domain={!swapAxes ? [800, 1600] : [2.0, 4.0]} stroke="#484f58" fontSize={10} tick={{ fontFamily: 'JetBrains Mono' }} allowDataOverflow={true} />
                   {boundaryVal !== null && (
                     <ReferenceLine y={boundaryVal} stroke="#3b82f6" strokeDasharray="4 4" strokeWidth={1.5} label={{ position: 'right', value: t.decisionBoundary, fill: '#3b82f6', fontSize: 9, fontWeight: '900', letterSpacing: '0.1em' }} />
                   )}
@@ -626,7 +697,7 @@ const App = () => {
                         opacity={0.3}
                         label={{
                           position: 'top',
-                          value: !swapAxes ? originalStudent.gpa.toFixed(2) : originalStudent.sat,
+                          value: !swapAxes ? originalStudent.gpa.toFixed(2) : Math.round(originalStudent.sat),
                           fill: '#3b82f6',
                           fontSize: 8,
                           fontFamily: 'JetBrains Mono',
@@ -640,7 +711,7 @@ const App = () => {
                         opacity={0.3}
                         label={{
                           position: 'right',
-                          value: !swapAxes ? originalStudent.sat : originalStudent.gpa.toFixed(2),
+                          value: !swapAxes ? Math.round(originalStudent.sat) : originalStudent.gpa.toFixed(2),
                           fill: '#3b82f6',
                           fontSize: 8,
                           fontFamily: 'JetBrains Mono',
@@ -702,6 +773,32 @@ const App = () => {
                       style={{ filter: checkMatch(originalStudent) ? 'drop-shadow(0 0 10px rgba(255,255,255,0.4))' : 'none' }}
                     />
                   </Scatter>
+
+                  {/* Margin Shortest Path Line (Original) */}
+                  {selectedId !== null && originalStudent && marginStats && (
+                    <Scatter
+                      data={[
+                        { gpa: originalStudent.gpa, sat: originalStudent.sat },
+                        marginStats.projection
+                      ]}
+                      line={{ stroke: '#3b82f6', strokeWidth: 1, strokeDasharray: '3 3', opacity: 0.4 }}
+                      shape={() => null}
+                      opacity={checkMatch(originalStudent) ? 1 : 0.15}
+                    />
+                  )}
+
+                  {/* Margin Shortest Path Line (Counterfactual) */}
+                  {cfProfile && cfMarginStats && (
+                    <Scatter
+                      data={[
+                        { gpa: cfProfile.gpa, sat: cfProfile.sat },
+                        cfMarginStats.projection
+                      ]}
+                      line={{ stroke: '#fbbf24', strokeWidth: 1, strokeDasharray: '2 2', opacity: 0.6 }}
+                      shape={() => null}
+                      opacity={checkMatch(originalStudent) ? 1 : 0.15}
+                    />
+                  )}
                 </ScatterChart>
               </ResponsiveContainer>
             </div>
@@ -710,70 +807,141 @@ const App = () => {
           <div className="bg-[#161b22] border-2 border-blue-500/30 rounded-3xl overflow-hidden grid grid-cols-2 flex-1 divide-x divide-slate-800 shadow-xl min-h-0">
 
             {/* FEATURE INSPECTOR */}
-            <div className="p-3 flex flex-col min-h-0 bg-[#0d1117]/20 h-full">
-              <div className="flex items-center gap-2 mb-2 text-xs font-black text-slate-500 uppercase border-b border-slate-800 pb-1 tracking-widest"><Fingerprint className="w-3 h-3" /> {t.inspector}</div>
-              <div className="flex-1 flex flex-col min-h-0">
-                <div className="space-y-0.5 opacity-70">
-                  <div className="flex justify-between text-[11px] font-bold text-slate-500 tracking-wider uppercase"><span>GPA</span><span>{originalStudent.gpa.toFixed(2)}</span></div>
-                  <input type="range" min="2.0" max="4.0" step="0.01" value={originalStudent.gpa} disabled className="w-full h-1 bg-slate-800 rounded-full accent-slate-600 opacity-50 pointer-events-none" />
-                </div>
-                <div className="space-y-0.5 mt-1 opacity-70">
-                  <div className="flex justify-between text-[11px] font-bold text-slate-500 tracking-wider uppercase"><span>SAT</span><span>{originalStudent.sat}</span></div>
-                  <input type="range" min="800" max="1600" step="10" value={originalStudent.sat} disabled className="w-full h-1 bg-slate-800 rounded-full accent-slate-600 opacity-50 pointer-events-none" />
+            <div className="p-3 flex flex-col min-h-0 bg-[#0d1117]/20 h-full overflow-hidden">
+              <div className="flex items-center justify-between mb-2 border-b border-slate-800 pb-1.5 flex-shrink-0">
+                <div className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest"><Fingerprint className="w-3.5 h-3.5" /> {t.inspector}</div>
+                <button onClick={() => setExplainer('inspector')} className="text-slate-700 hover:text-blue-400 transition-colors"><HelpCircle className="w-3 h-3" /></button>
+              </div>
+
+              <div className="flex-1 flex flex-col justify-start min-h-0 gap-2.5">
+                <div className="space-y-2">
+                  <div className="space-y-0.5 opacity-70">
+                    <div className="flex justify-between text-[10px] font-bold text-slate-400 tracking-wider uppercase leading-none"><span>GPA</span><span className="font-mono">{originalStudent.gpa.toFixed(2)}</span></div>
+                    <input type="range" min="2.0" max="4.0" step="0.01" value={originalStudent.gpa} disabled className="w-full h-1 bg-slate-800 rounded-full accent-slate-600 opacity-50 pointer-events-none" />
+                  </div>
+                  <div className="space-y-0.5 opacity-70">
+                    <div className="flex justify-between text-[10px] font-bold text-slate-400 tracking-wider uppercase leading-none"><span>SAT</span><span className="font-mono">{originalStudent.sat}</span></div>
+                    <input type="range" min="800" max="1600" step="10" value={originalStudent.sat} disabled className="w-full h-1 bg-slate-800 rounded-full accent-slate-600 opacity-50 pointer-events-none" />
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-1.5 mt-auto mb-4">
+                <div className="grid grid-cols-2 gap-1.5">
                   {[
                     { label: t.athlete, active: originalStudent.isAthlete, isBool: true },
                     { label: t.firstGen, active: originalStudent.isFirstGen, isBool: true },
                     { label: formatVal(originalStudent.gender, 'gender'), active: true, isBool: false },
                     { label: t.resident, active: originalStudent.isResident, isBool: true }
                   ].map((btn, idx) => (
-                    <div key={idx} className={`py-1 rounded border text-[10px] font-black text-center uppercase tracking-tight transition-all duration-300 ${btn.active ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-slate-800/40 border-slate-700/50 text-slate-600'}`}>
-                      {btn.label.toUpperCase()} {btn.isBool && `: ${btn.active ? t.yes : t.no}`}
+                    <div key={idx} className={`h-9 flex items-center justify-center rounded-xl border text-[9px] font-black uppercase tracking-tight transition-all duration-300 ${btn.active ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.05)]' : 'bg-slate-800/20 border-slate-700/30 text-slate-600'}`}>
+                      {btn.isBool ? `${btn.label}: ${btn.active ? t.yes : t.no}` : btn.label}
                     </div>
                   ))}
                 </div>
 
-                <div className={`mt-auto p-3 rounded-2xl text-center shadow-lg border-2 h-24 flex flex-col justify-center transition-all ${isAdmitted(originalStudent) ? 'bg-emerald-500/90 border-emerald-400 text-white' : 'bg-rose-500/90 border-rose-400 text-white'}`}>
-                  <p className="text-[10px] font-black uppercase mb-0.5 opacity-80 leading-none">{t.fate}</p>
+                <div className="flex items-center justify-between px-3 bg-slate-800/20 border border-slate-700/30 rounded-2xl py-2.5 shadow-inner relative group">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">{t.margin}</span>
+                      <button onClick={() => setExplainer('margin')} className="p-0.5 text-slate-600 hover:text-blue-400 transition-colors">
+                        <HelpCircle className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <span className="text-[7px] text-slate-500 font-bold uppercase tracking-tighter leading-none">Standardized L2 Norm</span>
+                  </div>
+                  <span className="text-sm font-mono font-black text-blue-500 drop-shadow-[0_0_10_rgba(59,130,246,0.4)]">{marginStats?.margin || "0.00"}</span>
+                </div>
+
+                <div className={`mt-auto p-3 rounded-[2rem] text-center shadow-lg border-2 h-20 flex flex-col justify-center transition-all ${isAdmitted(originalStudent) ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20' : 'bg-rose-500 border-rose-400 text-white shadow-rose-500/20'}`}>
+                  <p className="text-[9px] font-black uppercase mb-0.5 opacity-80 leading-none tracking-widest">{t.fate}</p>
                   <p className="text-xl font-black italic tracking-tighter leading-none my-1">{isAdmitted(originalStudent) ? t.admit : t.reject}</p>
-                  <p className="text-[11px] font-mono mt-0.5 opacity-90 uppercase tracking-widest leading-none">
-                    Score: <span className="text-white">{calcScore(originalStudent, weights).toFixed(1)}</span>
+                  <p className="text-[10px] font-mono mt-0.5 opacity-90 uppercase tracking-widest leading-none">
+                    Score: <span className="text-white font-bold">{calcScore(originalStudent, weights).toFixed(1)}</span>
                   </p>
                 </div>
               </div>
             </div>
+
 
             {/* COUNTERFACTUAL EDITOR */}
-            <div className="p-3 flex flex-col bg-blue-500/[0.03] min-h-0 h-full">
-              <div className="flex items-center gap-2 mb-2 text-xs font-black text-blue-400 uppercase border-b border-blue-500/20 pb-1 tracking-widest"><Target className="w-3 h-3" /> {t.editor}</div>
-              <div className="flex-1 flex flex-col min-h-0">
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-[11px] font-bold text-blue-400 tracking-wider uppercase leading-none"><span>GPA</span><span className="font-mono">{cfProfile.gpa.toFixed(2)}</span></div>
-                  <input type="range" min="2.0" max="4.0" step="0.01" value={cfProfile.gpa} onChange={(e) => handleCfChange('gpa', parseFloat(e.target.value))} className="w-full" />
-                </div>
-                <div className="space-y-1.5 mt-2">
-                  <div className="flex justify-between text-[11px] font-bold text-blue-400 tracking-wider uppercase leading-none"><span>SAT</span><span className="font-mono">{cfProfile.sat}</span></div>
-                  <input type="range" min="800" max="1600" step="10" value={cfProfile.sat} onChange={(e) => handleCfChange('sat', parseInt(e.target.value))} className="w-full" />
+            <div className="p-3 flex flex-col min-h-0 bg-blue-500/[0.03] h-full overflow-hidden">
+              <div className="flex items-center justify-between mb-2 border-b border-blue-500/20 pb-1.5 flex-shrink-0">
+                <div className="flex items-center gap-2 text-[11px] font-black text-blue-400 uppercase tracking-widest"><Target className="w-3.5 h-3.5" /> {t.editor}</div>
+                <button onClick={() => setExplainer('editor')} className="text-slate-700 hover:text-blue-400 transition-colors"><HelpCircle className="w-3 h-3" /></button>
+              </div>
+
+              <div className="flex-1 flex flex-col justify-start min-h-0 gap-2.5">
+                <div className="space-y-2">
+                  <div className="space-y-0.5">
+                    <div className="flex justify-between text-[10px] font-bold text-blue-400 tracking-wider uppercase leading-none"><span>GPA</span><span className="font-mono">{cfProfile.gpa.toFixed(2)}</span></div>
+                    <input type="range" min="2.0" max="4.0" step="0.01" value={cfProfile.gpa} onChange={(e) => handleCfChange('gpa', parseFloat(e.target.value))} className="w-full h-1 bg-slate-800 rounded-full accent-blue-600" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="flex justify-between text-[10px] font-bold text-blue-400 tracking-wider uppercase leading-none"><span>SAT</span><span className="font-mono">{cfProfile.sat}</span></div>
+                    <input type="range" min="800" max="1600" step="10" value={cfProfile.sat} onChange={(e) => handleCfChange('sat', parseInt(e.target.value))} className="w-full h-1 bg-slate-800 rounded-full accent-blue-600" />
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-1.5 mt-auto mb-4">
-                  <button onClick={() => handleCfChange('isAthlete', !cfProfile.isAthlete)} className={`py-1 rounded text-[10px] font-black border transition-all active:scale-95 ${cfProfile.isAthlete ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>{t.athlete.toUpperCase()}</button>
-                  <button onClick={() => handleCfChange('isFirstGen', !cfProfile.isFirstGen)} className={`py-1 rounded text-[10px] font-black border transition-all active:scale-95 ${cfProfile.isFirstGen ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-500/20' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>{t.firstGen.toUpperCase()}</button>
-                  <button onClick={() => handleCfChange('gender', cfProfile.gender === 'Male' ? 'Female' : 'Male')} className="py-1 rounded text-[10px] font-black border bg-slate-800 border-slate-700 uppercase transition-all hover:border-slate-500 text-slate-300 active:scale-95">{formatVal(cfProfile.gender, 'gender').toUpperCase()}</button>
-                  <button onClick={() => handleCfChange('isResident', !cfProfile.isResident)} className={`py-1 rounded text-[10px] font-black border transition-all active:scale-95 ${cfProfile.isResident ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>{t.resident.toUpperCase()}</button>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { key: 'isAthlete', label: t.athlete, isBool: true },
+                    { key: 'isFirstGen', label: t.firstGen, isBool: true },
+                    { key: 'gender', label: formatVal(cfProfile.gender, 'gender'), isGender: true },
+                    { key: 'isResident', label: t.resident, isBool: true }
+                  ].map((btn) => {
+                    const isDirty = cfProfile[btn.key] !== originalStudent[btn.key];
+                    const labelText = btn.isBool ? `${btn.label}: ${cfProfile[btn.key] ? t.yes : t.no}` : btn.label;
+
+                    let colorClass = 'bg-slate-800/40 border-slate-700/30 text-slate-500 hover:border-slate-500';
+                    if (isDirty) {
+                      const isGain = cfProfile[btn.key] === true || (btn.isGender && cfProfile.gender === 'Female');
+                      colorClass = isGain
+                        ? 'bg-emerald-600/90 border-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                        : 'bg-rose-600/90 border-rose-500 text-white shadow-lg shadow-rose-500/30';
+                    }
+
+                    return (
+                      <button
+                        key={btn.key}
+                        onClick={() => {
+                          if (btn.isGender) {
+                            handleCfChange('gender', cfProfile.gender === 'Male' ? 'Female' : 'Male');
+                          } else {
+                            handleCfChange(btn.key, !cfProfile[btn.key]);
+                          }
+                        }}
+                        className={`h-9 flex items-center justify-center rounded-xl text-[9px] font-black border transition-all active:scale-95 uppercase tracking-tight ${colorClass}`}
+                      >
+                        {labelText}
+                      </button>
+                    );
+                  })}
                 </div>
 
-                <div className={`mt-auto p-3 rounded-2xl text-center shadow-lg transition-all scale-105 border-2 h-24 flex flex-col justify-center transition-all ${isAdmitted(cfProfile) ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/30' : 'bg-rose-500 border-rose-400 text-white shadow-rose-500/30'}`}>
-                  <p className="text-[10px] font-black uppercase mb-0.5 opacity-90 leading-none">{t.fate}</p>
+                <div className="flex items-center justify-between px-3 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl py-2.5 shadow-inner relative group">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest leading-none">{t.margin}</span>
+                      {cfMarginStats && (
+                        <span className={`text-[10px] font-black ${Number(cfMarginStats.margin) >= Number(marginStats?.margin || 0) ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {Number(cfMarginStats.margin) >= Number(marginStats?.margin || 0) ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[7px] text-slate-500 font-bold uppercase tracking-tighter leading-none">Dynamic Delta L2</span>
+                  </div>
+                  <span className="text-sm font-mono font-black text-indigo-400 drop-shadow-[0_0_8px_rgba(99,102,241,0.3)]">{cfMarginStats?.margin || "0.00"}</span>
+                </div>
+
+                <div className={`mt-auto p-3 rounded-[2rem] text-center shadow-lg border-2 h-20 flex flex-col justify-center transition-all ${isAdmitted(cfProfile) ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20' : 'bg-rose-500 border-rose-400 text-white shadow-rose-500/20'}`}>
+                  <p className="text-[9px] font-black uppercase mb-0.5 opacity-80 leading-none tracking-widest">{t.fate}</p>
                   <p className="text-xl font-black italic tracking-tighter leading-none my-1">{isAdmitted(cfProfile) ? t.admit : t.reject}</p>
-                  <p className="text-[11px] font-mono mt-0.5 opacity-90 uppercase tracking-widest leading-none">
-                    Score: <span className="text-white">{calcScore(cfProfile, weights).toFixed(1)}</span>
+                  <p className="text-[10px] font-mono mt-0.5 opacity-90 uppercase tracking-widest leading-none">
+                    Score: <span className="text-white font-bold">{calcScore(cfProfile, weights).toFixed(1)}</span>
                   </p>
                 </div>
               </div>
             </div>
+
           </div>
         </section>
 
@@ -781,13 +949,13 @@ const App = () => {
         <section className="col-span-3 flex flex-col gap-3 min-h-0">
           <div className="bg-[#161b22] border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col overflow-hidden shadow-xl aurora-border">
             <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
-              <h2 className="text-[13px] font-black uppercase text-slate-500 tracking-widest flex items-center justify-between w-full">
+              <h2 className="text-[13px] font-black uppercase text-slate-400 tracking-widest flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="w-3 h-3 text-purple-500" /> {t.slices}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-600 font-black lowercase font-mono">({t.groupRate})</span>
-                  <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-500 font-mono font-black border border-slate-700">N={data.length}</span>
+                  <span className="text-[10px] text-slate-500 font-black lowercase font-mono">({t.groupRate})</span>
+                  <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-mono font-black border border-slate-700">N={data.length}</span>
                 </div>
               </h2>
             </div>
@@ -855,9 +1023,9 @@ const App = () => {
             </div>
 
             {/* DISPARITY METER */}
-            <div className="mb-4 mt-2 p-3 bg-slate-900/60 rounded-2xl border border-slate-800 shadow-inner group">
+            <div className="mb-4 mt-2 p-3 bg-slate-800/20 border border-slate-700/30 rounded-2xl shadow-inner group">
               <div className="flex justify-between items-center mb-2">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
                   <Activity className="w-3 h-3 text-rose-500" /> {t.disparityMeter}
                 </p>
                 <p className={`text-[11px] font-mono font-black transition-all duration-500 ${stats.genderGap > 20 ? 'text-rose-500' : 'text-slate-400'}`}>
@@ -880,7 +1048,7 @@ const App = () => {
 
             <div className="pt-3 border-t border-slate-800">
               <div className="flex justify-between items-center mb-2">
-                <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest leading-none flex items-center gap-2"><Target className="w-3 h-3 text-emerald-500" /> {t.confusion}</p>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none flex items-center gap-2"><Target className="w-3 h-3 text-emerald-500" /> {t.confusion}</p>
                 <button onClick={() => setExplainer('confusion')} className="text-slate-600 hover:text-blue-400 transition-colors active:scale-95"><HelpCircle className="w-3 h-3" /></button>
               </div>
               <div className="grid grid-cols-2 gap-1.5 text-center font-mono">
