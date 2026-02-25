@@ -33,7 +33,7 @@ const TRANSLATIONS = {
     params: "Parameters",
     threshold: "Threshold",
     weights: "Weights (%)",
-    gpa: "GPA", sat: "SAT", athlete: "Athlete", firstGen: "1st-Gen", gender: "Gender", resident: "Resident",
+    gpa: "GPA", sat: "SAT", athlete: "ATHLETE", firstGen: "1ST-GEN", gender: "GENDER (FAVOR FEMALE)", resident: "RESIDENT",
     visualizer: "Counterfactual Visualizer",
     inspector: "Feature Inspector",
     editor: "Counterfactual Editor",
@@ -63,8 +63,11 @@ const TRANSLATIONS = {
     ethAccuracy: "Accuracy Paradox: High precision might be codifying historical biases.",
     ethBalance: "Weight Imbalance: Over-reliance on a single metric ignores holistic potential.",
     ethDisparity: "Disparity Detected: Current weights create significant group inequality.",
+    ethGenderBias: "Gender Bias: High SAT weights are causing a significant disparity.",
     ethThreshold: "Extreme Standard: This cutoff may lead to mass exclusion or zero selection.",
     ethNeutral: "Balance Mode: Model appears stable, but always watch the 'False Negatives'.",
+    disparityMeter: "Disparity Meter",
+    genderGap: "Gender Gap",
     yes: "YES", no: "NO", male: "MALE", female: "FEMALE", nonbinary: "NON-BINARY",
     thresholdWiki: "https://en.wikipedia.org/wiki/Threshold_level",
     confusionWiki: "https://en.wikipedia.org/wiki/Confusion_matrix",
@@ -81,7 +84,7 @@ const TRANSLATIONS = {
     params: "模型参数调节",
     threshold: "录取门槛",
     weights: "特征权重 (%)",
-    gpa: "GPA", sat: "SAT", athlete: "运动员", firstGen: "一代生", gender: "性别倾向", resident: "本州居民",
+    gpa: "GPA", sat: "SAT", athlete: "运动员", firstGen: "一代生", gender: "性别权重 (偏向女性)", resident: "本州居民",
     visualizer: "反事实可视化 (Visualizer)",
     inspector: "特征审查 (Inspector)",
     editor: "反事实编辑 (Editor)",
@@ -111,8 +114,11 @@ const TRANSLATIONS = {
     ethAccuracy: "准确度悖论：过高的准确度可能正在固化历史上的系统性偏见。",
     ethBalance: "权重失衡：过度依赖单一指标会忽略对学生全方位潜能的评估。",
     ethDisparity: "监测到录取不公：当前的权重配置导致了明显的群体间不平等。",
+    ethGenderBias: "检测到性别偏见：由于 SAT 权重过高，导致了明显的性别倾向差距。",
     ethThreshold: "极端录取标准：当前的门槛可能导致大规模人才排斥或盲目准入。",
     ethNeutral: "平衡观察中：当前模型相对稳定，但请持续关注‘误判拒绝’案例。",
+    disparityMeter: "公平性仪表盘",
+    genderGap: "性别录取差距",
     yes: "是", no: "否", male: "男性", female: "女性", nonbinary: "非二元",
     thresholdWiki: "https://zh.wikipedia.org/wiki/%E9%98%88%E5%80%BC",
     confusionWiki: "https://zh.wikipedia.org/wiki/%E6%B7%B7%E6%B7%86%E7%9F%A9%E9%98%B5",
@@ -129,7 +135,7 @@ const TRANSLATIONS = {
     params: "Parámetros",
     threshold: "Umbral",
     weights: "Pesos (%)",
-    gpa: "GPA", sat: "SAT", athlete: "Atleta", firstGen: "1ra-Gen", gender: "Género", resident: "Residente",
+    gpa: "GPA", sat: "SAT", athlete: "ATLETA", firstGen: "1RA-GEN", gender: "GÉNERO (FAVOR FEM)", resident: "RESIDENTE",
     visualizer: "Visualizador What-If",
     inspector: "Inspector de Perfil",
     editor: "Editor What-If",
@@ -159,8 +165,11 @@ const TRANSLATIONS = {
     ethAccuracy: "Paradoja de Precisión: La alta fidelidad puede estar codificando sesgos.",
     ethBalance: "Desequilibrio: La dependencia de una métrica ignora el potencial holístico.",
     ethDisparity: "Desigualdad Detectada: Los pesos crean una brecha grupal significativa.",
+    ethGenderBias: "Sesgo de Género: Los altos pesos del SAT están causando una brecha significativa.",
     ethThreshold: "Estándar Extremo: Este límite puede causar una exclusión masiva.",
     ethNeutral: "Modo de Equilibrio: Modelo estable, pero vigile los 'Falsos Negativos'.",
+    disparityMeter: "Medidor de Disparidad",
+    genderGap: "Brecha de Género",
     yes: "SÍ", no: "NO", male: "MASC", female: "FEM", nonbinary: "NO-BIN",
     thresholdWiki: "https://es.wikipedia.org/wiki/Umbral",
     confusionWiki: "https://es.wikipedia.org/wiki/Matriz_de_confusi%C3%B3n",
@@ -187,7 +196,6 @@ const LAB_TIPS = {
   zh: [
     "选中一名“拒绝”学生并使用编辑器。观察跨越分界线时的金色人生轨迹！",
     "点击矩阵中的'FP'。高准确度的模型往往隐藏了这些不公平的录取。",
-    "点击'挖掘疑难样本'。观察微小的分值变化如何剧烈改变边缘学生的命运。",
     "点击切片中的'一代生'。这些学生是否普遍更接近拒绝区域？",
     "大幅调高 SAT 权重。观察由于权重变化导致的‘疑难案例’脉冲闪烁。",
     "切换 X/Y 轴。从不同的维度看，录取模式是否有显著差异？",
@@ -208,13 +216,14 @@ const LAB_TIPS = {
 
 const generateData = () => {
   const data = [];
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 100; i++) {
     const gpa = parseFloat((Math.random() * 1.5 + 2.5).toFixed(2));
     const sat = Math.floor(Math.random() * 400 + 1200);
     const isAthlete = Math.random() > 0.88;
     const isFirstGen = Math.random() > 0.75;
     const isResident = Math.random() > 0.4;
-    const gender = Math.random() > 0.5 ? 'Female' : 'Male';
+    // Force balanced gender for better math clarity
+    const gender = i % 2 === 0 ? 'Female' : 'Male';
     const latentPotential = (gpa * 18) + (sat / 1600 * 20) + (Math.random() * 15);
     const actualLabel = latentPotential > 72;
     data.push({ id: i, gpa, sat, isAthlete, isFirstGen, isResident, gender, label: actualLabel, x: gpa, y: sat });
@@ -252,13 +261,17 @@ const App = () => {
 
   const calcScore = (p, w) => {
     if (!p) return 0;
-    const sGpa = (p.gpa / 4.0) * w.gpa;
-    const sSat = (p.sat / 1600) * w.sat;
+    // Normalize GPA (2.5-4.0) and SAT (1200-1600) to 0-100 range for proper weighting
+    const normalizedGpa = (p.gpa - 2.5) / 1.5 * 100;
+    const normalizedSat = (p.sat - 1200) / 400 * 100;
+
+    const sGpa = (normalizedGpa * w.gpa) / 100;
+    const sSat = (normalizedSat * w.sat) / 100;
     const sAth = p.isAthlete ? w.athlete : 0;
     const sFst = p.isFirstGen ? w.firstGen : 0;
     const sGen = p.gender === 'Female' ? w.gender : 0;
     const sRes = p.isResident ? w.resident : 0;
-    return Math.min(100, sGpa + sSat + sAth + sFst + sGen + sRes);
+    return Math.min(100, Math.max(0, sGpa + sSat + sAth + sFst + sGen + sRes));
   };
 
   const isAdmitted = (p) => calcScore(p, weights) >= threshold;
@@ -267,13 +280,17 @@ const App = () => {
     const p = cfProfile;
     if (!swapAxes) {
       if (weights.sat === 0) return null;
-      const otherScores = (p.gpa / 4.0) * weights.gpa + (p.isAthlete ? weights.athlete : 0) + (p.isFirstGen ? weights.firstGen : 0) + (p.gender === 'Female' ? weights.gender : 0) + (p.isResident ? weights.resident : 0);
-      const val = (threshold - otherScores) / weights.sat * 1600;
+      const normalizedGpa = (p.gpa - 2.5) / 1.5 * 100;
+      const otherScores = (normalizedGpa * weights.gpa) / 100 + (p.isAthlete ? weights.athlete : 0) + (p.isFirstGen ? weights.firstGen : 0) + (p.gender === 'Female' ? weights.gender : 0) + (p.isResident ? weights.resident : 0);
+      const neededSatNorm = (threshold - otherScores) / weights.sat * 100;
+      const val = (neededSatNorm / 100 * 400) + 1200;
       return val >= 800 && val <= 1600 ? val : null;
     } else {
       if (weights.gpa === 0) return null;
-      const otherScores = (p.sat / 1600.0) * weights.sat + (p.isAthlete ? weights.athlete : 0) + (p.isFirstGen ? weights.firstGen : 0) + (p.gender === 'Female' ? weights.gender : 0) + (p.isResident ? weights.resident : 0);
-      const val = (threshold - otherScores) / weights.gpa * 4.0;
+      const normalizedSat = (p.sat - 1200) / 400 * 100;
+      const otherScores = (normalizedSat * weights.sat) / 100 + (p.isAthlete ? weights.athlete : 0) + (p.isFirstGen ? weights.firstGen : 0) + (p.gender === 'Female' ? weights.gender : 0) + (p.isResident ? weights.resident : 0);
+      const neededGpaNorm = (threshold - otherScores) / weights.gpa * 100;
+      const val = (neededGpaNorm / 100 * 1.5) + 2.5;
       return val >= 2.0 && val <= 4.0 ? val : null;
     }
   }, [cfProfile, weights, threshold, swapAxes]);
@@ -291,6 +308,19 @@ const App = () => {
       if (s.isResident) { groups.resident.c++; if (pred) groups.resident.a++; }
     });
     const total = data.length || 1;
+    const femaleRate = Math.round(groups.female.a / groups.female.c * 100) || 0;
+    const maleRate = Math.round(groups.male.a / groups.male.c * 100) || 0;
+    const genderGap = Math.abs(femaleRate - maleRate);
+
+    const allRates = [
+      Math.round(groups.athlete.a / groups.athlete.c * 100) || 0,
+      Math.round(groups.firstGen.a / groups.firstGen.c * 100) || 0,
+      femaleRate,
+      maleRate,
+      Math.round(groups.resident.a / groups.resident.c * 100) || 0
+    ];
+    const maxGap = Math.max(...allRates) - Math.min(...allRates);
+
     return {
       tp, fp, tn, fn,
       accuracy: (((tp + tn) / total) * 100).toFixed(1),
@@ -298,12 +328,14 @@ const App = () => {
       fpRate: Math.round((fp / total) * 100),
       fnRate: Math.round((fn / total) * 100),
       tnRate: Math.round((tn / total) * 100),
+      genderGap,
+      maxGap,
       groupStats: [
-        { name: t.athlete, rate: Math.round(groups.athlete.a / groups.athlete.c * 100) || 0, count: groups.athlete.c },
-        { name: t.firstGen, rate: Math.round(groups.firstGen.a / groups.firstGen.c * 100) || 0, count: groups.firstGen.c },
-        { name: t.female, rate: Math.round(groups.female.a / groups.female.c * 100) || 0, count: groups.female.c },
-        { name: t.male, rate: Math.round(groups.male.a / groups.male.c * 100) || 0, count: groups.male.c },
-        { name: t.resident, rate: Math.round(groups.resident.a / groups.resident.c * 100) || 0, count: groups.resident.c }
+        { name: t.athlete, rate: Math.round(groups.athlete.a / groups.athlete.c * 100) || 0, count: groups.athlete.c, admitted: groups.athlete.a },
+        { name: t.firstGen, rate: Math.round(groups.firstGen.a / groups.firstGen.c * 100) || 0, count: groups.firstGen.c, admitted: groups.firstGen.a },
+        { name: t.female, rate: femaleRate, count: groups.female.c, admitted: groups.female.a },
+        { name: t.male, rate: maleRate, count: groups.male.c, admitted: groups.male.a },
+        { name: t.resident, rate: Math.round(groups.resident.a / groups.resident.c * 100) || 0, count: groups.resident.c, admitted: groups.resident.a }
       ]
     };
   }, [data, weights, threshold, t, lang]);
@@ -348,19 +380,20 @@ const App = () => {
   const handleCfChange = (f, v) => setCfProfile(p => ({ ...p, [f]: v }));
 
   const dynamicAlert = useMemo(() => {
-    // 1. Accuracy Check
+    // 1. Gender Gap Alert (Highest Priority as requested)
+    if (stats.genderGap > 20 && weights.sat > 40) return t.ethGenderBias;
+
+    // 2. Accuracy Check
     if (stats.accuracy > 85) return t.ethAccuracy;
 
-    // 2. Disparity Check (Max vs Min rate difference)
-    const rates = stats.groupStats.map(g => g.rate);
-    const maxDiff = Math.max(...rates) - Math.min(...rates);
-    if (maxDiff > 25) return t.ethDisparity;
+    // 3. Disparity Check (Max vs Min rate difference)
+    if (stats.maxGap > 25) return t.ethDisparity;
 
-    // 3. Weight Concentration Check
+    // 4. Weight Concentration Check
     const maxWeight = Math.max(...Object.values(weights));
     if (maxWeight > 60) return t.ethBalance;
 
-    // 4. Threshold Extremes
+    // 5. Threshold Extremes
     if (threshold > 85 || threshold < 35) return t.ethThreshold;
 
     return t.ethNeutral;
@@ -495,48 +528,40 @@ const App = () => {
 
         {/* LEFT Column */}
         <section className="col-span-3 flex flex-col gap-3 min-h-0">
-          <div className="bg-[#161b22] border border-slate-800 rounded-2xl p-3 flex-1 flex flex-col min-h-0 shadow-lg">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-[13px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2"><Settings className="w-3 h-3" /> {t.params}</h2>
-              <div className={`text-[11px] font-black px-1.5 py-0.5 rounded border ${Object.values(weights).reduce((a, b) => a + b, 0) === 100 ? 'border-emerald-500 text-emerald-500' : 'border-amber-500 text-amber-500'}`}>Σ={Object.values(weights).reduce((a, b) => a + b, 0)}%</div>
+          <div className="bg-[#161b22] border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col gap-4 shadow-xl aurora-border">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+              <h2 className="text-[13px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2"><Settings className="w-3 h-3 text-blue-500" /> {t.params}</h2>
+              <div className={`text-[11px] font-mono font-black px-1.5 py-0.5 rounded border ${Object.values(weights).reduce((a, b) => a + b, 0) === 100 ? 'border-emerald-500 text-emerald-500' : 'border-amber-500 text-amber-500'}`}>Σ={Object.values(weights).reduce((a, b) => a + b, 0)}%</div>
             </div>
 
-            <div className="flex-1 min-h-0 flex flex-col space-y-2">
-              <div className="space-y-0.5 bg-slate-900/30 p-2 rounded-xl border border-slate-800/50">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1 text-xs font-bold">
-                    <span>{t.threshold}</span>
-                    <button onClick={() => setExplainer('threshold')} className="text-slate-600 hover:text-blue-400 transition-colors"><HelpCircle className="w-3 h-3" /></button>
-                  </div>
-                  <div className="flex flex-col items-end h-8 justify-center">
-                    <span className="text-blue-500 font-black text-sm leading-none">{threshold}</span>
-                    <div className="h-3.5 flex items-center">
-                      {boundaryVal !== null && (
-                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">
-                          {!swapAxes ? `Cutoff: SAT ≈ ${Math.round(boundaryVal)}` : `Cutoff: GPA ≈ ${boundaryVal.toFixed(2)}`}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+            <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                  <span className="flex items-center gap-1"><GraduationCap className="w-3 h-3 text-rose-500" /> {t.threshold}</span>
+                  <span className="text-rose-400 font-mono text-xs">{threshold}.0</span>
                 </div>
-                <input type="range" min="30" max="95" value={threshold} onChange={(e) => setThreshold(parseInt(e.target.value))} className="w-full h-1 bg-slate-800 rounded-full accent-blue-500 cursor-pointer" />
+                <input type="range" min="0" max="100" value={threshold} onChange={(e) => setThreshold(parseInt(e.target.value))} className="w-full" />
               </div>
 
-              <div className="pt-2 border-t border-slate-800 flex-1 flex flex-col min-h-0 space-y-2">
+              <div className="flex flex-col gap-2 min-h-0 flex-1">
                 <div className="flex flex-col gap-1.5">
                   <h3 className="text-xs font-black text-slate-600 uppercase tracking-widest">{t.weights}</h3>
                   <div className="grid grid-cols-2 gap-1 px-0.5">
-                    <button onClick={() => handleWeights('normalize')} className="text-[10px] bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 py-0.5 rounded uppercase font-bold transition-colors">{t.normalize}</button>
-                    <button onClick={() => handleWeights('default')} className="text-[10px] bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 py-0.5 rounded uppercase font-bold transition-colors">{t.default}</button>
-                    <button onClick={() => handleWeights('random')} className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 py-0.5 rounded uppercase font-bold transition-colors">{t.random}</button>
-                    <button onClick={() => handleWeights('reset')} className="text-[10px] bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 py-0.5 rounded uppercase font-bold transition-colors">{t.reset}</button>
+                    <button onClick={() => handleWeights('normalize')} className="text-[10px] bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95">{t.normalize}</button>
+                    <button onClick={() => handleWeights('default')} className="text-[10px] bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95">{t.default}</button>
+                    <button onClick={() => handleWeights('random')} className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 py-0.5 rounded uppercase font-bold transition-all active:scale-95">{t.random}</button>
+                    <button onClick={() => handleWeights('reset')} className="text-[10px] bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95">{t.reset}</button>
                   </div>
                 </div>
                 <div className="flex-1 space-y-1.5 pr-0.5 overflow-hidden">
                   {Object.keys(weights).map(k => (
-                    <div key={k} className="space-y-0">
-                      <div className="flex justify-between text-xs font-bold"><span className="text-slate-400 capitalize leading-none">{t[k] || k}</span><span className="text-blue-400 leading-none">{weights[k]}%</span></div>
-                      <input type="range" min="0" max="100" value={weights[k]} onChange={(e) => setWeights(p => ({ ...p, [k]: parseInt(e.target.value) }))} className="w-full h-1 bg-slate-800 rounded-full accent-slate-500 cursor-pointer" />
+                    <div key={k} className="space-y-0 relative group">
+                      <div className="flex justify-between text-xs font-bold leading-none mb-0.5">
+                        <span className="text-slate-400 capitalize">{t[k] || k}</span>
+                        <span className="text-blue-400 font-mono">{weights[k]}%</span>
+                      </div>
+                      <input type="range" min="0" max="100" value={weights[k]} onChange={(e) => setWeights(p => ({ ...p, [k]: parseInt(e.target.value) }))} className="w-full" />
+                      <div className="absolute -left-1.5 top-0 bottom-0 w-0.5 bg-blue-500/40 rounded opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   ))}
                 </div>
@@ -544,11 +569,11 @@ const App = () => {
             </div>
           </div>
           {/* Lab Guide fixed height h-24 */}
-          <div className="bg-blue-600 rounded-2xl p-3 text-white shadow-xl relative overflow-hidden h-28 flex-shrink-0 flex flex-col justify-between">
+          <div className="bg-blue-600 rounded-2xl p-3 text-white shadow-xl relative overflow-hidden h-28 flex-shrink-0 flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer">
             <div className="relative z-10 flex flex-col h-full">
               <div className="flex justify-between items-center mb-1">
                 <p className="font-black text-xs tracking-widest uppercase opacity-70 flex items-center gap-2"><BookOpen className="w-3 h-3" /> {t.labGuide}</p>
-                <button onClick={() => setTipIndex((tipIndex + 1) % LAB_TIPS[lang].length)} className="p-1 hover:bg-white/20 rounded-full flex items-center gap-0.5 text-[11px] font-black uppercase">
+                <button onClick={(e) => { e.stopPropagation(); setTipIndex((tipIndex + 1) % LAB_TIPS[lang].length); }} className="p-1 hover:bg-white/20 rounded-full flex items-center gap-0.5 text-[11px] font-black uppercase">
                   {t.nextTip} <ChevronRight className="w-3 h-3" />
                 </button>
               </div>
@@ -560,15 +585,15 @@ const App = () => {
 
         {/* MIDDLE Column */}
         <section className="col-span-6 flex flex-col gap-3 min-h-0">
-          <div className="bg-[#161b22] border border-slate-800 rounded-2xl p-4 h-[42%] relative shadow-inner">
+          <div className="bg-[#161b22] border border-slate-800 rounded-2xl p-4 h-[42%] relative shadow-inner aurora-border">
             <div className="flex flex-col mb-1">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <h3 className="text-[13px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2"><Activity className="w-3 h-3" /> {t.visualizer}</h3>
-                  <button onClick={() => setSwapAxes(!swapAxes)} className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase hover:bg-blue-500/20 transition-all">
+                  <button onClick={() => setSwapAxes(!swapAxes)} className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase hover:bg-blue-500/20 transition-all active:scale-95">
                     <RefreshCw className={`w-2.5 h-2.5 ${swapAxes ? 'rotate-180' : ''} transition-transform`} /> {t.axisSwap}
                   </button>
-                  <button onClick={() => setIsMining(!isMining)} className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-[10px] font-black uppercase transition-all ${isMining ? 'bg-amber-500 border-amber-400 text-white shadow-lg shadow-amber-500/20' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                  <button onClick={() => setIsMining(!isMining)} className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-[10px] font-black uppercase transition-all active:scale-95 ${isMining ? 'bg-amber-500 border-amber-400 text-white shadow-lg shadow-amber-500/20' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
                     <Target className={`w-2.5 h-2.5 ${isMining ? 'animate-spin-slow' : ''}`} /> {lang === 'zh' ? '挖掘疑难样本' : (lang === 'es' ? 'Minería' : 'Mine Edge Cases')}
                   </button>
                 </div>
@@ -585,11 +610,46 @@ const App = () => {
               <ResponsiveContainer>
                 <ScatterChart margin={{ top: 10, right: 20, bottom: 0, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#21262d" vertical={false} />
-                  <XAxis type="number" dataKey={!swapAxes ? "gpa" : "sat"} domain={!swapAxes ? [2.0, 4.0] : [800, 1600]} stroke="#484f58" fontSize={11} />
-                  <YAxis type="number" dataKey={!swapAxes ? "sat" : "gpa"} domain={!swapAxes ? [800, 1600] : [2.0, 4.0]} stroke="#484f58" fontSize={11} />
+                  <XAxis type="number" dataKey={!swapAxes ? "gpa" : "sat"} domain={!swapAxes ? [2.0, 4.0] : [800, 1600]} stroke="#484f58" fontSize={10} tick={{ fontFamily: 'JetBrains Mono' }} />
+                  <YAxis type="number" dataKey={!swapAxes ? "sat" : "gpa"} domain={!swapAxes ? [800, 1600] : [2.0, 4.0]} stroke="#484f58" fontSize={10} tick={{ fontFamily: 'JetBrains Mono' }} />
                   {boundaryVal !== null && (
                     <ReferenceLine y={boundaryVal} stroke="#3b82f6" strokeDasharray="4 4" strokeWidth={1.5} label={{ position: 'right', value: t.decisionBoundary, fill: '#3b82f6', fontSize: 9, fontWeight: '900', letterSpacing: '0.1em' }} />
                   )}
+
+                  {/* Scientific Projections */}
+                  {selectedId !== null && originalStudent && (
+                    <>
+                      <ReferenceLine
+                        x={!swapAxes ? originalStudent.gpa : originalStudent.sat}
+                        stroke="#3b82f6"
+                        strokeDasharray="3 3"
+                        opacity={0.3}
+                        label={{
+                          position: 'top',
+                          value: !swapAxes ? originalStudent.gpa.toFixed(2) : originalStudent.sat,
+                          fill: '#3b82f6',
+                          fontSize: 8,
+                          fontFamily: 'JetBrains Mono',
+                          fontWeight: 'bold'
+                        }}
+                      />
+                      <ReferenceLine
+                        y={!swapAxes ? originalStudent.sat : originalStudent.gpa}
+                        stroke="#3b82f6"
+                        strokeDasharray="3 3"
+                        opacity={0.3}
+                        label={{
+                          position: 'right',
+                          value: !swapAxes ? originalStudent.sat : originalStudent.gpa.toFixed(2),
+                          fill: '#3b82f6',
+                          fontSize: 8,
+                          fontFamily: 'JetBrains Mono',
+                          fontWeight: 'bold'
+                        }}
+                      />
+                    </>
+                  )}
+
                   <Scatter
                     data={data}
                     onClick={(e) => e && e.id !== undefined && setSelectedId(e.id)}
@@ -675,10 +735,12 @@ const App = () => {
                   ))}
                 </div>
 
-                <div className={`mt-auto p-3 rounded-2xl text-center shadow-lg border-2 h-24 flex flex-col justify-center ${isAdmitted(originalStudent) ? 'bg-emerald-500/90 border-emerald-400 text-white' : 'bg-rose-500/90 border-rose-400 text-white'}`}>
-                  <p className="text-[10px] font-black uppercase mb-0.5 opacity-80">{t.fate}</p>
-                  <p className="text-xl font-black italic tracking-tighter leading-none">{isAdmitted(originalStudent) ? t.admit : t.reject}</p>
-                  <p className="text-[10px] font-mono mt-1 opacity-70 uppercase tracking-widest leading-none">Score: {calcScore(originalStudent, weights).toFixed(1)}</p>
+                <div className={`mt-auto p-3 rounded-2xl text-center shadow-lg border-2 h-24 flex flex-col justify-center transition-all ${isAdmitted(originalStudent) ? 'bg-emerald-500/90 border-emerald-400 text-white' : 'bg-rose-500/90 border-rose-400 text-white'}`}>
+                  <p className="text-[10px] font-black uppercase mb-0.5 opacity-80 leading-none">{t.fate}</p>
+                  <p className="text-xl font-black italic tracking-tighter leading-none my-1">{isAdmitted(originalStudent) ? t.admit : t.reject}</p>
+                  <p className="text-[11px] font-mono mt-0.5 opacity-90 uppercase tracking-widest leading-none">
+                    Score: <span className="text-white">{calcScore(originalStudent, weights).toFixed(1)}</span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -687,26 +749,28 @@ const App = () => {
             <div className="p-3 flex flex-col bg-blue-500/[0.03] min-h-0 h-full">
               <div className="flex items-center gap-2 mb-2 text-xs font-black text-blue-400 uppercase border-b border-blue-500/20 pb-1 tracking-widest"><Target className="w-3 h-3" /> {t.editor}</div>
               <div className="flex-1 flex flex-col min-h-0">
-                <div className="space-y-0.5">
-                  <div className="flex justify-between text-[11px] font-bold text-blue-400 tracking-wider uppercase"><span>GPA</span><span>{cfProfile.gpa.toFixed(2)}</span></div>
-                  <input type="range" min="2.0" max="4.0" step="0.01" value={cfProfile.gpa} onChange={(e) => handleCfChange('gpa', parseFloat(e.target.value))} className="w-full h-1 accent-blue-500 bg-slate-800 rounded-full cursor-pointer" />
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[11px] font-bold text-blue-400 tracking-wider uppercase leading-none"><span>GPA</span><span className="font-mono">{cfProfile.gpa.toFixed(2)}</span></div>
+                  <input type="range" min="2.0" max="4.0" step="0.01" value={cfProfile.gpa} onChange={(e) => handleCfChange('gpa', parseFloat(e.target.value))} className="w-full" />
                 </div>
-                <div className="space-y-0.5 mt-1">
-                  <div className="flex justify-between text-[11px] font-bold text-blue-400 tracking-wider uppercase"><span>SAT</span><span>{cfProfile.sat}</span></div>
-                  <input type="range" min="800" max="1600" step="10" value={cfProfile.sat} onChange={(e) => handleCfChange('sat', parseInt(e.target.value))} className="w-full h-1 accent-blue-500 bg-slate-800 rounded-full cursor-pointer" />
+                <div className="space-y-1.5 mt-2">
+                  <div className="flex justify-between text-[11px] font-bold text-blue-400 tracking-wider uppercase leading-none"><span>SAT</span><span className="font-mono">{cfProfile.sat}</span></div>
+                  <input type="range" min="800" max="1600" step="10" value={cfProfile.sat} onChange={(e) => handleCfChange('sat', parseInt(e.target.value))} className="w-full" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-1.5 mt-auto mb-4">
-                  <button onClick={() => handleCfChange('isAthlete', !cfProfile.isAthlete)} className={`py-1 rounded text-[10px] font-black border transition-all ${cfProfile.isAthlete ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>{t.athlete.toUpperCase()}</button>
-                  <button onClick={() => handleCfChange('isFirstGen', !cfProfile.isFirstGen)} className={`py-1 rounded text-[10px] font-black border transition-all ${cfProfile.isFirstGen ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-500/20' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>{t.firstGen.toUpperCase()}</button>
-                  <button onClick={() => handleCfChange('gender', cfProfile.gender === 'Male' ? 'Female' : 'Male')} className="py-1 rounded text-[10px] font-black border bg-slate-800 border-slate-700 uppercase transition-all hover:border-slate-500 text-slate-300">{formatVal(cfProfile.gender, 'gender').toUpperCase()}</button>
-                  <button onClick={() => handleCfChange('isResident', !cfProfile.isResident)} className={`py-1 rounded text-[10px] font-black border transition-all ${cfProfile.isResident ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>{t.resident.toUpperCase()}</button>
+                  <button onClick={() => handleCfChange('isAthlete', !cfProfile.isAthlete)} className={`py-1 rounded text-[10px] font-black border transition-all active:scale-95 ${cfProfile.isAthlete ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>{t.athlete.toUpperCase()}</button>
+                  <button onClick={() => handleCfChange('isFirstGen', !cfProfile.isFirstGen)} className={`py-1 rounded text-[10px] font-black border transition-all active:scale-95 ${cfProfile.isFirstGen ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-500/20' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>{t.firstGen.toUpperCase()}</button>
+                  <button onClick={() => handleCfChange('gender', cfProfile.gender === 'Male' ? 'Female' : 'Male')} className="py-1 rounded text-[10px] font-black border bg-slate-800 border-slate-700 uppercase transition-all hover:border-slate-500 text-slate-300 active:scale-95">{formatVal(cfProfile.gender, 'gender').toUpperCase()}</button>
+                  <button onClick={() => handleCfChange('isResident', !cfProfile.isResident)} className={`py-1 rounded text-[10px] font-black border transition-all active:scale-95 ${cfProfile.isResident ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>{t.resident.toUpperCase()}</button>
                 </div>
 
-                <div className={`mt-auto p-3 rounded-2xl text-center shadow-lg transition-all scale-105 border-2 h-24 flex flex-col justify-center ${isAdmitted(cfProfile) ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/30' : 'bg-rose-500 border-rose-400 text-white shadow-rose-500/30'}`}>
-                  <p className="text-[10px] font-black uppercase mb-0.5 opacity-90">{t.fate}</p>
-                  <p className="text-xl font-black italic tracking-tighter leading-none">{isAdmitted(cfProfile) ? t.admit : t.reject}</p>
-                  <p className="text-[10px] font-mono mt-1 opacity-80 uppercase tracking-widest leading-none">Score: {calcScore(cfProfile, weights).toFixed(1)}</p>
+                <div className={`mt-auto p-3 rounded-2xl text-center shadow-lg transition-all scale-105 border-2 h-24 flex flex-col justify-center transition-all ${isAdmitted(cfProfile) ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/30' : 'bg-rose-500 border-rose-400 text-white shadow-rose-500/30'}`}>
+                  <p className="text-[10px] font-black uppercase mb-0.5 opacity-90 leading-none">{t.fate}</p>
+                  <p className="text-xl font-black italic tracking-tighter leading-none my-1">{isAdmitted(cfProfile) ? t.admit : t.reject}</p>
+                  <p className="text-[11px] font-mono mt-0.5 opacity-90 uppercase tracking-widest leading-none">
+                    Score: <span className="text-white">{calcScore(cfProfile, weights).toFixed(1)}</span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -715,13 +779,16 @@ const App = () => {
 
         {/* RIGHT Column */}
         <section className="col-span-3 flex flex-col gap-3 min-h-0">
-          <div className="bg-[#161b22] border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col overflow-hidden shadow-xl">
+          <div className="bg-[#161b22] border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col overflow-hidden shadow-xl aurora-border">
             <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
               <h2 className="text-[13px] font-black uppercase text-slate-500 tracking-widest flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="w-3 h-3 text-purple-500" /> {t.slices}
                 </div>
-                <span className="text-[10px] text-slate-600 font-bold lowercase">({t.groupRate})</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-slate-600 font-black lowercase font-mono">({t.groupRate})</span>
+                  <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-500 font-mono font-black border border-slate-700">N={data.length}</span>
+                </div>
               </h2>
             </div>
             <div className="flex-1 min-h-0 relative">
@@ -729,7 +796,7 @@ const App = () => {
                 <BarChart
                   data={stats.groupStats}
                   layout="vertical"
-                  margin={{ left: -5, right: 100, top: 10, bottom: 10 }}
+                  margin={{ left: 10, right: 100, top: 10, bottom: 10 }}
                   onClick={(e) => {
                     if (e && e.activeLabel) {
                       const val = e.activeLabel;
@@ -738,7 +805,7 @@ const App = () => {
                   }}
                 >
                   <XAxis type="number" hide domain={[0, 100]} />
-                  <YAxis dataKey="name" type="category" stroke="#484f58" fontSize={10} width={55} />
+                  <YAxis dataKey="name" type="category" stroke="#484f58" fontSize={10} width={65} tick={{ fontFamily: 'JetBrains Mono', fontWeight: 'bold' }} />
                   <Bar dataKey="rate" radius={[0, 2, 2, 0]} fill={COLORS.barDefault} style={{ cursor: 'pointer' }}>
                     {stats.groupStats.map((entry, index) => (
                       <Cell
@@ -752,15 +819,15 @@ const App = () => {
                       position="right"
                       content={(props) => {
                         const { x, y, width, height, value, index } = props;
-                        const count = stats.groupStats[index].count;
+                        const item = stats.groupStats[index];
                         return (
                           <text
                             x={x + width + 8}
                             y={y + height / 2 + 4}
-                            className="font-sans font-black uppercase"
+                            className="font-mono font-black uppercase"
                           >
                             <tspan fill="#60a5fa" fontSize="10">{value}%</tspan>
-                            <tspan fill="#475569" fontSize="9" fontWeight="bold"> (n={count})</tspan>
+                            <tspan fill="#475569" fontSize="9" fontWeight="bold"> [N={item.admitted}/{item.count}]</tspan>
                           </text>
                         );
                       }}
@@ -770,11 +837,13 @@ const App = () => {
                     cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
+                        const { name, count, admitted } = payload[0].payload;
                         return (
-                          <div className="bg-[#1c2128] border border-slate-700 p-2 rounded shadow-xl text-[10px] font-bold">
-                            <p className="text-slate-200">{payload[0].payload.name}</p>
-                            <p className="text-blue-400">{t.groupRate}: {payload[0].value}%</p>
-                            <p className="text-slate-400">Total Samples: {payload[0].payload.count}</p>
+                          <div className="bg-[#1c2128] border border-slate-700 p-2 rounded shadow-xl text-[10px] font-bold font-mono">
+                            <p className="text-slate-200 border-b border-slate-800 mb-1.5 pb-1 uppercase tracking-widest">{name}</p>
+                            <p className="text-blue-400 mb-0.5">RATE: {payload[0].value}%</p>
+                            <p className="text-emerald-500/80 mb-0.5 uppercase">Admitted: {admitted}</p>
+                            <p className="text-slate-500 uppercase">Total: {count}</p>
                           </div>
                         );
                       }
@@ -784,12 +853,37 @@ const App = () => {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+
+            {/* DISPARITY METER */}
+            <div className="mb-4 mt-2 p-3 bg-slate-900/60 rounded-2xl border border-slate-800 shadow-inner group">
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                  <Activity className="w-3 h-3 text-rose-500" /> {t.disparityMeter}
+                </p>
+                <p className={`text-[11px] font-mono font-black transition-all duration-500 ${stats.genderGap > 20 ? 'text-rose-500' : 'text-slate-400'}`}>
+                  {t.genderGap}: <span className="text-white">{stats.genderGap}%</span>
+                </p>
+              </div>
+              <div className="relative h-3 bg-slate-800 rounded-full overflow-hidden border border-slate-700 shadow-inner">
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 via-yellow-500/20 to-rose-500/30" />
+                <div
+                  className={`absolute top-0 bottom-0 w-2 transition-all duration-700 shadow-[0_0_12px_rgba(255,255,255,0.5)] ${stats.genderGap > 20 ? 'bg-rose-500 scale-y-150' : 'bg-blue-400'}`}
+                  style={{ left: `${Math.min(97, stats.genderGap)}%` }}
+                />
+              </div>
+              <div className="flex justify-between mt-2 text-[8px] font-mono font-black text-slate-600 uppercase tracking-tighter opacity-80">
+                <span className={stats.genderGap <= 10 ? 'text-emerald-500' : ''}>FAIR [0-10]</span>
+                <span className={stats.genderGap > 10 && stats.genderGap <= 20 ? 'text-yellow-500' : ''}>WARN [10-20]</span>
+                <span className={stats.genderGap > 20 ? 'text-rose-500' : ''}>CRITICAL [20+]</span>
+              </div>
+            </div>
+
             <div className="pt-3 border-t border-slate-800">
               <div className="flex justify-between items-center mb-2">
-                <p className="text-xs font-black text-slate-500 uppercase tracking-widest leading-none flex items-center gap-2"><Target className="w-3 h-3" /> {t.confusion}</p>
-                <button onClick={() => setExplainer('confusion')} className="text-slate-600 hover:text-blue-400 transition-colors"><HelpCircle className="w-3 h-3" /></button>
+                <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest leading-none flex items-center gap-2"><Target className="w-3 h-3 text-emerald-500" /> {t.confusion}</p>
+                <button onClick={() => setExplainer('confusion')} className="text-slate-600 hover:text-blue-400 transition-colors active:scale-95"><HelpCircle className="w-3 h-3" /></button>
               </div>
-              <div className="grid grid-cols-2 gap-1 text-center font-mono">
+              <div className="grid grid-cols-2 gap-1.5 text-center font-mono">
                 {[
                   { l: 'TP', v: stats.tp, r: stats.tpRate, c: 'emerald', rgb: '16, 185, 129' },
                   { l: 'FP', v: stats.fp, r: stats.fpRate, c: 'amber', rgb: '245, 158, 11' },
@@ -801,13 +895,13 @@ const App = () => {
                     <div
                       key={m.l}
                       onClick={() => setFilterMode(prev => (prev?.type === 'confusion' && prev?.value === m.l) ? null : { type: 'confusion', value: m.l })}
-                      className={`p-1 rounded border shadow-sm transition-all duration-300 cursor-pointer ${isActive ? `border-${m.c}-400 ring-2 ring-${m.c}-500/20 scale-[1.02]` : `border-${m.c}-500/20 hover:border-${m.c}-500/40`}`}
-                      style={{ backgroundColor: isActive ? `rgba(${m.rgb}, 0.4)` : `rgba(${m.rgb}, ${Math.max(0.05, m.r / 100)})` }}
+                      className={`p-1.5 rounded border shadow-sm transition-all duration-300 cursor-pointer active:scale-95 ${isActive ? `border-${m.c}-400 ring-4 ring-${m.c}-500/20 scale-[1.03]` : `border-${m.c}-500/10 hover:border-${m.c}-500/30`}`}
+                      style={{ backgroundColor: isActive ? `rgba(${m.rgb}, 0.5)` : `rgba(${m.rgb}, ${Math.max(0.05, m.r / 150)})` }}
                     >
-                      <p className={`text-[10px] ${isActive ? 'text-white' : `text-${m.c}-400`} uppercase font-black leading-none mb-1`}>{m.l}</p>
+                      <p className={`text-[9px] ${isActive ? 'text-white' : `text-${m.c}-400`} uppercase font-black leading-none mb-1.5 tracking-tighter`}>{m.l}</p>
                       <div className="flex flex-col gap-0.5">
-                        <p className={`text-sm font-black ${isActive ? 'text-white' : 'text-white'} leading-none`}>{m.v}</p>
-                        <p className={`text-[9px] font-bold ${isActive ? 'text-white/80' : `text-${m.c}-300/80`} leading-none`}>{m.r}%</p>
+                        <p className={`text-sm font-black ${isActive ? 'text-white' : 'text-slate-200'} leading-none`}>{m.v}</p>
+                        <p className={`text-[9px] font-bold ${isActive ? 'text-white/80' : `text-${m.c}-300/60`} leading-none`}>{m.r}%</p>
                       </div>
                     </div>
                   );
@@ -816,15 +910,15 @@ const App = () => {
             </div>
           </div>
           {/* Ethics Alert fixed height h-24 */}
-          <div className={`bg-[#1c2128] border border-slate-800 rounded-2xl p-4 shadow-lg border-l-4 h-28 flex-shrink-0 flex flex-col justify-center transition-all duration-500 ${dynamicAlert === t.ethNeutral ? 'border-l-blue-500' : 'border-l-amber-500'}`}>
-            <div className={`flex items-center justify-between mb-1`}>
+          <div className={`bg-[#1c2128] border border-slate-800 rounded-2xl p-4 shadow-lg border-l-4 h-28 flex-shrink-0 flex flex-col justify-center transition-all duration-500 aurora-border ${dynamicAlert === t.ethNeutral ? 'border-l-blue-500' : 'border-l-amber-500'}`}>
+            <div className={`flex items-center justify-between mb-1.5 border-b border-slate-800/50 pb-1`}>
               <div className={`flex items-center gap-2 ${dynamicAlert === t.ethNeutral ? 'text-blue-400' : 'text-amber-500'}`}>
-                <ShieldAlert className="w-3 h-3" />
-                <p className="text-xs font-black uppercase tracking-widest">{t.ethicsAlert}</p>
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <p className="text-xs font-black uppercase tracking-widest leading-none">{t.ethicsAlert}</p>
               </div>
-              <button onClick={() => setExplainer('scanner')} className="text-slate-600 hover:text-blue-400 transition-colors"><HelpCircle className="w-3 h-3" /></button>
+              <button onClick={() => setExplainer('scanner')} className="text-slate-600 hover:text-blue-400 transition-colors active:scale-95"><HelpCircle className="w-3 h-3" /></button>
             </div>
-            <p className={`text-[13px] leading-tight italic font-medium transition-colors duration-500 ${dynamicAlert === t.ethNeutral ? 'text-slate-400' : 'text-slate-300'}`}>{dynamicAlert}</p>
+            <p className={`text-[13px] leading-snug italic font-medium transition-colors duration-500 ${dynamicAlert === t.ethNeutral ? 'text-slate-400' : 'text-slate-300'}`}>{dynamicAlert}</p>
           </div>
         </section>
 
