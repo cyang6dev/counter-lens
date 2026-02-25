@@ -6,7 +6,8 @@ import {
 } from 'recharts';
 import {
   Settings, GraduationCap, Target, RefreshCw, Fingerprint, ShieldAlert,
-  HelpCircle, Info, Globe, User, ExternalLink, X, ChevronRight, School, Database, BookOpen, BarChart3, Activity, Scale
+  HelpCircle, Info, Globe, User, ExternalLink, X, ChevronRight, School, Database, BookOpen, BarChart3, Activity, Scale,
+  Sparkles, Layout
 } from 'lucide-react';
 
 /**
@@ -28,7 +29,7 @@ const COLORS = {
 
 const TRANSLATIONS = {
   en: {
-    title: "What-If Lab UMBC",
+    title: "What-If Lab",
     accuracy: "Model Accuracy",
     params: "Parameters",
     threshold: "Threshold",
@@ -88,7 +89,7 @@ const TRANSLATIONS = {
     editorExplainer: "The Editor enables you to manipulate features to see 'what if' the inputs were different. This helps in understanding the model's decision boundaries and sensitivity."
   },
   zh: {
-    title: "What-If Lab UMBC",
+    title: "What-If Lab",
     accuracy: "模型准确度",
     params: "模型参数调节",
     threshold: "录取门槛",
@@ -148,7 +149,7 @@ const TRANSLATIONS = {
     editorExplainer: "反事实编辑器允许你模拟改变输入特征，观察‘如果当初不同’会如何影响判定。这能帮助你理解模型判定的敏感度和界限。"
   },
   es: {
-    title: "What-If Lab UMBC",
+    title: "What-If Lab",
     accuracy: "Precisión",
     params: "Parámetros",
     threshold: "Umbral",
@@ -266,6 +267,7 @@ const App = () => {
   const [swapAxes, setSwapAxes] = useState(false);
   const [filterMode, setFilterMode] = useState(null); // { type: 'confusion'|'slice', value: string }
   const [isMining, setIsMining] = useState(false);
+  const [glassMode, setGlassMode] = useState(true);
 
   const originalStudent = useMemo(() => data.find(s => s.id === selectedId) || data[0], [data, selectedId]);
 
@@ -467,12 +469,19 @@ const App = () => {
   };
 
   return (
-    <div className="h-screen bg-[#0d1117] text-slate-300 font-sans p-3 overflow-hidden flex flex-col relative selection:bg-blue-500/30">
+    <div className={`h-screen ${glassMode ? 'glass-active' : 'bg-[#0d1117]'} text-slate-300 font-sans p-3 overflow-hidden flex flex-col relative selection:bg-blue-500/30 transition-colors duration-700`}>
+      {glassMode && (
+        <div className="mesh-bg">
+          <div className="mesh-circle w-[600px] h-[600px] bg-blue-600/10 -top-[20%] -left-[10%]"></div>
+          <div className="mesh-circle w-[500px] h-[500px] bg-purple-600/10 top-[40%] -right-[5%]"></div>
+          <div className="mesh-circle w-[400px] h-[400px] bg-pink-600/10 -bottom-[10%] left-[20%]"></div>
+        </div>
+      )}
 
       {/* Overlay Modals */}
       {(showCredits || explainer) && (
         <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-[#161b22] border border-slate-700 w-full max-w-xl rounded-3xl p-8 shadow-2xl relative">
+          <div className={`bg-[#161b22] border border-slate-700 w-full max-w-xl rounded-3xl p-8 shadow-2xl relative ${glassMode ? 'glass-card' : ''}`}>
             <button onClick={() => { setShowCredits(false); setExplainer(null); }} className="absolute top-4 right-4 p-2 text-slate-500 hover:text-white transition-colors">
               <X className="w-5 h-5" />
             </button>
@@ -560,7 +569,7 @@ const App = () => {
       )}
 
       {/* Header */}
-      <header className="flex items-center justify-between mb-3 border-b border-slate-800 pb-2 flex-shrink-0">
+      <header className={`flex items-center justify-between mb-3 border-b ${glassMode ? 'border-white/5' : 'border-slate-800/40'} pb-2 flex-shrink-0 z-10 transition-colors ${glassMode ? 'glass-header' : ''}`}>
         <div className="flex items-center gap-4">
           <div className="relative flex items-center justify-center">
             <div className="absolute inset-0 bg-amber-500/20 blur-lg rounded-full"></div>
@@ -575,13 +584,20 @@ const App = () => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => setShowCredits(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase bg-[#161b22] border border-slate-800 text-slate-400 hover:text-blue-400 transition-all"><Info className="w-3.5 h-3.5" /> {t.aboutBtn}</button>
+          <button
+            onClick={() => setGlassMode(!glassMode)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all duration-500 ${glassMode ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] border-transparent' : 'bg-[#161b22] border border-slate-800 text-slate-400 hover:text-indigo-400'}`}
+          >
+            <Sparkles className={`w-3 h-3 ${glassMode ? 'animate-pulse' : ''}`} />
+            {lang === 'zh' ? '毛玻璃' : (lang === 'es' ? 'CRISTAL' : 'GLASS')}
+          </button>
+          <button onClick={() => setShowCredits(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase bg-[#161b22] border border-slate-800 text-slate-400 hover:text-blue-400 transition-all btn-tactile"><Info className="w-3.5 h-3.5" /> {t.aboutBtn}</button>
           <div className="flex bg-[#161b22] rounded-lg p-0.5 border border-slate-800">
             {['en', 'zh', 'es'].map(l => (
               <button key={l} onClick={() => setLang(l)} className={`px-2 py-1 rounded text-xs font-black uppercase ${lang === l ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>{l}</button>
             ))}
           </div>
-          <div className="bg-slate-900 px-4 py-1 rounded-xl border border-slate-800 flex items-center gap-3">
+          <div className={`${glassMode ? 'bg-white/5 border-white/10' : 'bg-slate-900 border-slate-800'} px-4 py-1 rounded-xl border flex items-center gap-3 transition-colors`}>
             <p className="text-xs text-slate-400 font-black uppercase">{t.accuracy}</p>
             <p className="text-lg font-black text-blue-500">{stats.accuracy}%</p>
           </div>
@@ -593,7 +609,7 @@ const App = () => {
 
         {/* LEFT Column */}
         <section className="col-span-3 flex flex-col gap-3 min-h-0">
-          <div className="bg-[#161b22] border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col gap-4 shadow-xl aurora-border">
+          <div className="bg-[#161b22] border border-slate-800 rounded-2xl glass-card p-4 flex-1 flex flex-col gap-4 shadow-xl aurora-border">
             <div className="flex justify-between items-center border-b border-slate-800 pb-2">
               <h2 className="text-[13px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Settings className="w-3 h-3 text-blue-500" /> {t.params}</h2>
               <div className={`text-[11px] font-mono font-black px-1.5 py-0.5 rounded border ${Object.values(weights).reduce((a, b) => a + b, 0) === 100 ? 'border-emerald-500 text-emerald-500' : 'border-amber-500 text-amber-500'}`}>Σ={Object.values(weights).reduce((a, b) => a + b, 0)}%</div>
@@ -618,10 +634,10 @@ const App = () => {
                     <button onClick={() => setExplainer('weights')} className="text-slate-700 hover:text-blue-400 p-0.5 transition-colors"><HelpCircle className="w-2.5 h-2.5" /></button>
                   </h3>
                   <div className="grid grid-cols-2 gap-1 px-0.5">
-                    <button onClick={() => handleWeights('normalize')} className="text-[10px] bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95">{t.normalize}</button>
-                    <button onClick={() => handleWeights('default')} className="text-[10px] bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95">{t.default}</button>
-                    <button onClick={() => handleWeights('random')} className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 py-0.5 rounded uppercase font-bold transition-all active:scale-95">{t.random}</button>
-                    <button onClick={() => handleWeights('reset')} className="text-[10px] bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95">{t.reset}</button>
+                    <button onClick={() => handleWeights('normalize')} className="text-[10px] bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95 btn-tactile btn-primary-tactile">{t.normalize}</button>
+                    <button onClick={() => handleWeights('default')} className="text-[10px] bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95 btn-tactile">{t.default}</button>
+                    <button onClick={() => handleWeights('random')} className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 py-0.5 rounded uppercase font-bold transition-all active:scale-95 btn-tactile">{t.random}</button>
+                    <button onClick={() => handleWeights('reset')} className="text-[10px] bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95 btn-tactile">{t.reset}</button>
                   </div>
                 </div>
                 <div className="flex-1 space-y-1.5 pr-0.5 overflow-hidden">
@@ -640,31 +656,31 @@ const App = () => {
             </div>
           </div>
           {/* Lab Guide fixed height h-24 */}
-          <div className="bg-blue-600 rounded-2xl p-3 text-white shadow-xl relative overflow-hidden h-28 flex-shrink-0 flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer">
+          <div className={`bg-[#161b22] border border-slate-800 rounded-2xl p-3 shadow-xl relative overflow-hidden h-28 flex-shrink-0 flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer aurora-border ${glassMode ? 'glass-card' : ''}`}>
             <div className="relative z-10 flex flex-col h-full">
               <div className="flex justify-between items-center mb-1">
-                <p className="font-black text-xs tracking-widest uppercase opacity-70 flex items-center gap-2"><BookOpen className="w-3 h-3" /> {t.labGuide}</p>
-                <button onClick={(e) => { e.stopPropagation(); setTipIndex((tipIndex + 1) % LAB_TIPS[lang].length); }} className="p-1 hover:bg-white/20 rounded-full flex items-center gap-0.5 text-[11px] font-black uppercase">
+                <p className="font-black text-xs tracking-widest uppercase text-slate-400 flex items-center gap-2"><BookOpen className="w-3 h-3 text-blue-500" /> {t.labGuide}</p>
+                <button onClick={(e) => { e.stopPropagation(); setTipIndex((tipIndex + 1) % LAB_TIPS[lang].length); }} className="p-1 hover:bg-slate-800 rounded-lg flex items-center gap-0.5 text-[11px] font-black uppercase text-blue-400 transition-colors btn-tactile">
                   {t.nextTip} <ChevronRight className="w-3 h-3" />
                 </button>
               </div>
-              <p className="text-[13px] leading-tight italic font-medium">"{LAB_TIPS[lang][tipIndex]}"</p>
+              <p className="text-[13px] leading-tight italic font-medium text-slate-300">"{LAB_TIPS[lang][tipIndex]}"</p>
             </div>
-            <Info className="absolute -bottom-2 -right-2 w-10 h-10 opacity-10" />
+            <div className="absolute -bottom-2 -right-2 w-10 h-10 opacity-[0.05] text-blue-500"><Info className="w-full h-full" /></div>
           </div>
         </section>
 
         {/* MIDDLE Column */}
         <section className="col-span-6 flex flex-col gap-3 min-h-0">
-          <div className="bg-[#161b22] border border-slate-800 rounded-2xl p-4 h-[42%] relative shadow-inner aurora-border">
+          <div className="bg-[#161b22] border border-slate-800 rounded-2xl glass-card p-4 h-[42%] relative shadow-inner aurora-border">
             <div className="flex flex-col mb-1">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <h3 className="text-[13px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2"><Activity className="w-3 h-3" /> {t.visualizer}</h3>
-                  <button onClick={() => setSwapAxes(!swapAxes)} className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase hover:bg-blue-500/20 transition-all active:scale-95">
+                  <button onClick={() => setSwapAxes(!swapAxes)} className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase hover:bg-blue-500/20 transition-all active:scale-95 btn-tactile btn-primary-tactile">
                     <RefreshCw className={`w-2.5 h-2.5 ${swapAxes ? 'rotate-180' : ''} transition-transform`} /> {t.axisSwap}
                   </button>
-                  <button onClick={() => setIsMining(!isMining)} className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-[10px] font-black uppercase transition-all active:scale-95 ${isMining ? 'bg-amber-500 border-amber-400 text-white shadow-lg shadow-amber-500/20' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                  <button onClick={() => setIsMining(!isMining)} className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-[10px] font-black uppercase transition-all active:scale-95 btn-tactile ${isMining ? 'bg-amber-500 border-amber-400 text-white shadow-lg shadow-amber-500/20' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
                     <Target className={`w-2.5 h-2.5 ${isMining ? 'animate-spin-slow' : ''}`} /> {lang === 'zh' ? '挖掘疑难样本' : (lang === 'es' ? 'Minería' : 'Mine Edge Cases')}
                   </button>
                 </div>
@@ -680,7 +696,7 @@ const App = () => {
             <div className="h-[calc(100%-20px)] w-full">
               <ResponsiveContainer>
                 <ScatterChart margin={{ top: 10, right: 20, bottom: 0, left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#21262d" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={glassMode ? "rgba(255,255,255,0.03)" : "#21262d"} vertical={false} />
                   <XAxis type="number" dataKey={!swapAxes ? "gpa" : "sat"} domain={!swapAxes ? [2.0, 4.0] : [800, 1600]} stroke="#484f58" fontSize={10} tick={{ fontFamily: 'JetBrains Mono' }} allowDataOverflow={true} />
                   <YAxis type="number" dataKey={!swapAxes ? "sat" : "gpa"} domain={!swapAxes ? [800, 1600] : [2.0, 4.0]} stroke="#484f58" fontSize={10} tick={{ fontFamily: 'JetBrains Mono' }} allowDataOverflow={true} />
                   {boundaryVal !== null && (
@@ -804,7 +820,7 @@ const App = () => {
             </div>
           </div>
 
-          <div className="bg-[#161b22] border-2 border-blue-500/30 rounded-3xl overflow-hidden grid grid-cols-2 flex-1 divide-x divide-slate-800 shadow-xl min-h-0">
+          <div className={`bg-[#161b22] border-2 border-blue-500/30 rounded-3xl overflow-hidden grid grid-cols-2 flex-1 divide-x divide-slate-800 shadow-xl min-h-0 aurora-border ${glassMode ? 'glass-card border-none' : ''}`}>
 
             {/* FEATURE INSPECTOR */}
             <div className="p-3 flex flex-col min-h-0 bg-[#0d1117]/20 h-full overflow-hidden">
@@ -909,7 +925,7 @@ const App = () => {
                             handleCfChange(btn.key, !cfProfile[btn.key]);
                           }
                         }}
-                        className={`h-9 flex items-center justify-center rounded-xl text-[9px] font-black border transition-all active:scale-95 uppercase tracking-tight ${colorClass}`}
+                        className={`h-9 flex items-center justify-center rounded-xl text-[9px] font-black border transition-all active:scale-95 uppercase tracking-tight btn-tactile ${colorClass}`}
                       >
                         {labelText}
                       </button>
@@ -947,7 +963,7 @@ const App = () => {
 
         {/* RIGHT Column */}
         <section className="col-span-3 flex flex-col gap-3 min-h-0">
-          <div className="bg-[#161b22] border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col overflow-hidden shadow-xl aurora-border">
+          <div className="bg-[#161b22] border border-slate-800 rounded-2xl glass-card p-4 flex-1 flex flex-col overflow-hidden shadow-xl aurora-border">
             <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
               <h2 className="text-[13px] font-black uppercase text-slate-400 tracking-widest flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
@@ -1078,7 +1094,7 @@ const App = () => {
             </div>
           </div>
           {/* Ethics Alert fixed height h-24 */}
-          <div className={`bg-[#1c2128] border border-slate-800 rounded-2xl p-4 shadow-lg border-l-4 h-28 flex-shrink-0 flex flex-col justify-center transition-all duration-500 aurora-border ${dynamicAlert === t.ethNeutral ? 'border-l-blue-500' : 'border-l-amber-500'}`}>
+          <div className={`bg-[#161b22] border border-slate-800 rounded-2xl p-4 shadow-xl h-28 flex-shrink-0 flex flex-col justify-center transition-all duration-500 aurora-border ${glassMode ? 'glass-card' : ''}`}>
             <div className={`flex items-center justify-between mb-1.5 border-b border-slate-800/50 pb-1`}>
               <div className={`flex items-center gap-2 ${dynamicAlert === t.ethNeutral ? 'text-blue-400' : 'text-amber-500'}`}>
                 <ShieldAlert className="w-3.5 h-3.5" />
@@ -1086,7 +1102,7 @@ const App = () => {
               </div>
               <button onClick={() => setExplainer('scanner')} className="text-slate-600 hover:text-blue-400 transition-colors active:scale-95"><HelpCircle className="w-3 h-3" /></button>
             </div>
-            <p className={`text-[13px] leading-snug italic font-medium transition-colors duration-500 ${dynamicAlert === t.ethNeutral ? 'text-slate-400' : 'text-slate-300'}`}>{dynamicAlert}</p>
+            <p className={`text-[13px] leading-snug italic font-medium transition-colors duration-500 ${dynamicAlert === t.ethNeutral ? 'text-slate-400' : 'text-slate-200'}`}>{dynamicAlert}</p>
           </div>
         </section>
 

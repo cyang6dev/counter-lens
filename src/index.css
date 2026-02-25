@@ -67,14 +67,137 @@ input[type=range]::-webkit-slider-runnable-track {
     content: '';
     position: absolute;
     inset: -2px;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #3b82f6);
-    background-size: 200% auto;
+    background: linear-gradient(45deg,
+            #3b82f6,
+            #8b5cf6,
+            #ec4899,
+            #8b5cf6,
+            #3b82f6);
+    background-size: 300% 300%;
     z-index: -1;
-    animation: flow 4s linear infinite;
+    animation: flow 12s ease infinite;
     opacity: 0;
-    transition: opacity 0.5s ease;
+    transition: opacity 0.8s ease;
 }
 
 .aurora-border:hover::before {
-    opacity: 0.4;
+    opacity: 0.15;
+}
+
+/* Glassmorphism Styles */
+.glass-active {
+    background: radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+        radial-gradient(at 50% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.15) 0px, transparent 50%),
+        #05070a !important;
+}
+
+.glass-active .glass-card {
+    background: rgba(22, 27, 34, 0.45) !important;
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-active .glass-header {
+    background: transparent !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.glass-active input[type=range]::-webkit-slider-runnable-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.glass-active .glass-button {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-active .glass-button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@keyframes mesh-float {
+    0% {
+        transform: translateY(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(-20px) scale(1.05);
+    }
+
+    100% {
+        transform: translateY(0) scale(1);
+    }
+}
+
+.mesh-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 1s ease;
+}
+
+.glass-active .mesh-bg {
+    opacity: 1;
+}
+
+.mesh-circle {
+    position: absolute;
+    filter: blur(80px);
+    border-radius: 50%;
+    animation: mesh-float 10s infinite ease-in-out;
+}
+
+/* Educational Affordance: Tactile Buttons */
+.btn-tactile {
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.btn-tactile:hover {
+    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(59, 130, 246, 0.05);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.1),
+        inset 0 0 5px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+}
+
+.btn-tactile:active {
+    transform: translateY(1px) scale(0.98);
+}
+
+/* Glowing indicator for main actions */
+.btn-primary-tactile {
+    border-color: rgba(59, 130, 246, 0.3) !important;
+    background: rgba(59, 130, 246, 0.1) !important;
+}
+
+.btn-primary-tactile:hover {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.glass-active .btn-tactile {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(4px);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.glass-active .btn-tactile:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
 }
