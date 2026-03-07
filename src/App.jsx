@@ -11,11 +11,7 @@ import {
 } from 'lucide-react';
 
 /**
- * AI/ML Ethics Lab - Berkeley Admission Simulator V2.2
- * * Final Polish:
- * 1. Fixed rendering bug (ensured default export).
- * 2. Visual Balance: Expanded Parameters and Dataset Slices to fill the vertical layout.
- * 3. Academic Integrity: Credits update and dataset reference included.
+ * AI/ML Ethics Lab - V2.3
  */
 
 const DEFAULT_WEIGHTS = { gpa: 40, sat: 30, athlete: 10, firstGen: 10, gender: 5, resident: 5 };
@@ -60,6 +56,7 @@ const TRANSLATIONS = {
     disparityMeter: "Disparity Meter",
     genderGap: "Gender Gap",
     yes: "YES", no: "NO", male: "MALE", female: "FEMALE", nonbinary: "NON-BINARY",
+    fateDelta: "Fate Flip Detected",
     thresholdWiki: "https://en.wikipedia.org/wiki/Threshold",
     confusionWiki: "https://en.wikipedia.org/wiki/Confusion_matrix",
     thresholdExplainer: "The threshold is the policy cutoff. A student's score is a weighted sum of attributes. Adjusting this represents changing admission standards.",
@@ -110,6 +107,7 @@ const TRANSLATIONS = {
     disparityMeter: "公平性仪表盘",
     genderGap: "性别录取差距",
     yes: "是", no: "否", male: "男性", female: "女性", nonbinary: "非二元",
+    fateDelta: "检测到命运反转",
     thresholdWiki: "https://zh.wikipedia.org/wiki/%E9%98%88%E5%80%BC",
     confusionWiki: "https://zh.wikipedia.org/wiki/%E6%B7%B7%E6%B7%86%E7%9F%A9%E9%98%B5",
     thresholdExplainer: "录取门槛是及格线。系统计算加权总分，达到门槛则录取。调高门槛代表录取标准变严。",
@@ -159,6 +157,7 @@ const TRANSLATIONS = {
     disparityMeter: "Medidor de Disparidad",
     genderGap: "Brecha de Género",
     yes: "SÍ", no: "NO", male: "MASC", female: "FEM", nonbinary: "NO-BIN",
+    fateDelta: "Giro de Destino",
     thresholdWiki: "https://es.wikipedia.org/wiki/Umbral",
     confusionWiki: "https://es.wikipedia.org/wiki/Matriz_de_confusi%C3%B3n",
     thresholdExplainer: "El umbral es el punto de corte. El puntaje se calcula sumando atributos por sus pesos.",
@@ -197,14 +196,14 @@ const App = () => {
   const [data] = useState(INITIAL_POOL);
   const [threshold, setThreshold] = useState(40);
   const [weights, setWeights] = useState({ ...DEFAULT_WEIGHTS });
-  const [selectedId, setSelectedId] = useState(0);
-  const [cfProfile, setCfProfile] = useState({ ...INITIAL_POOL[0] });
+  const [selectedId, setSelectedId] = useState(null);
+  const [cfProfile, setCfProfile] = useState(null);
   const [swapAxes, setSwapAxes] = useState(false);
   const [filterMode, setFilterMode] = useState(null); // { type: 'confusion'|'slice', value: string }
   const [isMining, setIsMining] = useState(false);
   const [glassMode, setGlassMode] = useState(true);
 
-  const originalStudent = useMemo(() => data.find(s => s.id === selectedId) || data[0], [data, selectedId]);
+  const originalStudent = useMemo(() => data.find(s => s.id === selectedId) || null, [data, selectedId]);
 
   useEffect(() => { if (originalStudent) setCfProfile({ ...originalStudent }); }, [originalStudent]);
 
@@ -233,6 +232,7 @@ const App = () => {
 
   const boundaryVal = useMemo(() => {
     const p = cfProfile;
+    if (!p) return null;
     if (!swapAxes) {
       if (weights.sat === 0) return null;
       const normalizedGpa = (p.gpa - 2.5) / 1.5 * 100;
@@ -522,9 +522,14 @@ const App = () => {
         {/* LEFT Column (20%) */}
         <section className="flex flex-col gap-3 min-h-0">
           <div className="bg-[#161b22] border border-slate-800 rounded-2xl glass-card p-4 flex-1 flex flex-col gap-4 shadow-xl aurora-border overflow-hidden">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-2 flex-shrink-0">
-              <h2 className="text-[13px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Settings className="w-3 h-3 text-blue-500" /> {t.params}</h2>
-              <div className={`text-[11px] font-mono font-black px-1.5 py-0.5 rounded border ${Object.values(weights).reduce((a, b) => a + b, 0) === 100 ? 'border-emerald-500 text-emerald-500' : 'border-amber-500 text-amber-500'}`}>Σ={Object.values(weights).reduce((a, b) => a + b, 0)}%</div>
+            <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4 flex-shrink-0">
+              <h2 className="text-sm font-black uppercase text-white tracking-[0.15em] flex items-center gap-3">
+                <div className="p-1.5 bg-blue-500/20 rounded-lg border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                  <Settings className="w-4 h-4 text-blue-400" />
+                </div>
+                {t.params}
+              </h2>
+              <div className={`text-[11px] font-mono font-black px-2 py-0.5 rounded border-2 ${Object.values(weights).reduce((a, b) => a + b, 0) === 100 ? 'border-emerald-500/50 text-emerald-400 bg-emerald-500/10' : 'border-amber-500/50 text-amber-400 bg-amber-500/10'}`}>Σ={Object.values(weights).reduce((a, b) => a + b, 0)}%</div>
             </div>
 
             <div className="flex-1 flex flex-col gap-4 overflow-hidden">
@@ -534,15 +539,15 @@ const App = () => {
                 <div className="space-y-2 relative z-10">
                   <div className="flex justify-between items-start">
                     <div className="flex flex-col">
-                      <div className="flex items-center gap-1.5 text-[11px] font-black text-rose-400 uppercase tracking-widest mb-0.5">
+                      <div className="flex items-center gap-1.5 text-xs font-black text-rose-400 uppercase tracking-widest mb-0.5">
                         <GraduationCap className="w-3.5 h-3.5" /> {t.threshold}
-                        <button onClick={() => setExplainer('threshold')} className="text-slate-600 hover:text-blue-400 transition-colors btn-tactile p-0.5"><HelpCircle className="w-2.5 h-2.5" /></button>
+                        <button onClick={() => setExplainer('threshold')} className="text-slate-600 hover:text-blue-400 transition-colors btn-tactile p-0.5"><HelpCircle className="w-3 h-3" /></button>
                       </div>
-                      <span className="text-[8px] font-black text-rose-500/60 uppercase tracking-tighter">Master Policy Gateway</span>
+                      <span className="text-[10px] font-black text-rose-500/60 uppercase tracking-tighter">Master Policy Gateway</span>
                     </div>
                     <div className="text-right flex flex-col">
                       <span className="text-rose-400 font-mono text-xl font-black leading-none drop-shadow-[0_0_8px_rgba(244,63,94,0.4)]">{threshold}</span>
-                      <span className="text-[8px] font-bold text-slate-600 uppercase">Percentile</span>
+                      <span className="text-[10px] font-bold text-slate-600 uppercase">Percentile</span>
                     </div>
                   </div>
                   <input type="range" min="0" max="100" value={threshold} onChange={(e) => setThreshold(parseInt(e.target.value))} className="w-full accent-rose-500 h-1" />
@@ -551,21 +556,21 @@ const App = () => {
 
               <div className="flex flex-col gap-2 min-h-0 flex-1">
                 <div className="flex flex-col gap-1.5">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
                     {t.weights}
-                    <button onClick={() => setExplainer('weights')} className="text-slate-600 hover:text-blue-400 transition-colors btn-tactile p-0.5"><HelpCircle className="w-[11px] h-[11px]" /></button>
+                    <button onClick={() => setExplainer('weights')} className="text-slate-600 hover:text-blue-400 transition-colors btn-tactile p-0.5"><HelpCircle className="w-4 h-4" /></button>
                   </h3>
                   <div className="grid grid-cols-2 gap-1 px-0.5">
-                    <button onClick={() => handleWeights('normalize')} className="text-[10px] bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95 btn-tactile btn-primary-tactile">{t.normalize}</button>
-                    <button onClick={() => handleWeights('default')} className="text-[10px] bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95 btn-tactile">{t.default}</button>
-                    <button onClick={() => handleWeights('random')} className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 py-0.5 rounded uppercase font-bold transition-all active:scale-95 btn-tactile">{t.random}</button>
-                    <button onClick={() => handleWeights('reset')} className="text-[10px] bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95 btn-tactile">{t.reset}</button>
+                    <button onClick={() => handleWeights('normalize')} className="text-xs bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95 btn-tactile btn-primary-tactile">{t.normalize}</button>
+                    <button onClick={() => handleWeights('default')} className="text-xs bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95 btn-tactile">{t.default}</button>
+                    <button onClick={() => handleWeights('random')} className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 py-0.5 rounded uppercase font-bold transition-all active:scale-95 btn-tactile">{t.random}</button>
+                    <button onClick={() => handleWeights('reset')} className="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 py-0.5 rounded uppercase font-bold transition-all active:scale-95 btn-tactile">{t.reset}</button>
                   </div>
                 </div>
                 <div className="flex-1 space-y-1.5 pr-0.5 overflow-hidden">
                   {Object.keys(weights).map(k => (
                     <div key={k} className="space-y-0 relative group">
-                      <div className="flex justify-between text-[10px] font-bold leading-none mb-0.5">
+                      <div className="flex justify-between text-xs font-bold leading-none mb-0.5">
                         <span className="text-slate-400 capitalize truncate max-w-[120px]">{t[k] || k}</span>
                         <span className="text-blue-400 font-mono">{weights[k]}%</span>
                       </div>
@@ -581,13 +586,18 @@ const App = () => {
 
         {/* MIDDLE Column (60%) */}
         <section className="flex flex-col gap-3 min-h-0 overflow-hidden">
-          <div className="bg-[#161b22] border border-slate-800 rounded-2xl glass-card p-4 h-[65%] relative shadow-inner aurora-border">
+          <div className="bg-[#161b22] border border-slate-800 rounded-2xl glass-card p-4 h-[69%] relative shadow-inner aurora-border">
             <div className="flex flex-col mb-1">
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-[13px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2"><Activity className="w-3 h-3" /> {t.visualizer}</h3>
-                  <button onClick={() => setSwapAxes(!swapAxes)} className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase hover:bg-blue-500/20 transition-all active:scale-95 btn-tactile btn-primary-tactile">
-                    <RefreshCw className={`w-2.5 h-2.5 ${swapAxes ? 'rotate-180' : ''} transition-transform`} /> {t.axisSwap}
+                <div className="flex items-center gap-4">
+                  <h3 className="text-sm font-black text-white uppercase tracking-[0.15em] flex items-center gap-3">
+                    <div className="p-1.5 bg-indigo-500/20 rounded-lg border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                      <Activity className="w-4 h-4 text-indigo-400" />
+                    </div>
+                    {t.visualizer}
+                  </h3>
+                  <button onClick={() => setSwapAxes(!swapAxes)} className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-black uppercase hover:bg-blue-500/20 transition-all active:scale-95 btn-tactile btn-primary-tactile">
+                    <RefreshCw className={`w-3 h-3 ${swapAxes ? 'rotate-180' : ''} transition-transform`} /> {t.axisSwap}
                   </button>
                   <button onClick={() => setIsMining(!isMining)} className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-[10px] font-black uppercase transition-all active:scale-95 btn-tactile ${isMining ? 'bg-amber-500 border-amber-400 text-white shadow-lg shadow-amber-500/20' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
                     <Target className={`w-2.5 h-2.5 ${isMining ? 'animate-spin-slow' : ''}`} /> {lang === 'zh' ? '挖掘疑难样本' : (lang === 'es' ? 'Minería' : 'Mine Edge Cases')}
@@ -609,10 +619,10 @@ const App = () => {
                 <ScatterChart margin={{ top: 20, right: 40, bottom: 20, left: 10 }}>
 
                   <CartesianGrid strokeDasharray="3 3" stroke={glassMode ? "rgba(255,255,255,0.03)" : "#21262d"} vertical={false} />
-                  <XAxis type="number" dataKey={!swapAxes ? "gpa" : "sat"} domain={!swapAxes ? [2.5, 4.0] : [1200, 1600]} stroke="#484f58" fontSize={10} tick={{ fontFamily: 'JetBrains Mono' }} allowDataOverflow={true} label={{ value: !swapAxes ? 'GPA' : 'SAT', position: 'insideBottomRight', offset: -10, fill: '#64748b', fontSize: 10, fontFamily: 'JetBrains Mono', fontWeight: '900' }} />
-                  <YAxis type="number" dataKey={!swapAxes ? "sat" : "gpa"} domain={!swapAxes ? [1200, 1600] : [2.5, 4.0]} stroke="#484f58" fontSize={10} tick={{ fontFamily: 'JetBrains Mono' }} allowDataOverflow={true} label={{ value: !swapAxes ? 'SAT' : 'GPA', angle: -90, position: 'insideLeft', offset: 10, fill: '#64748b', fontSize: 10, fontFamily: 'JetBrains Mono', fontWeight: '900' }} />
+                  <XAxis type="number" dataKey={!swapAxes ? "gpa" : "sat"} domain={!swapAxes ? [2.5, 4.0] : [1200, 1600]} stroke="#484f58" fontSize={11} tick={{ fontFamily: 'JetBrains Mono' }} allowDataOverflow={true} label={{ value: !swapAxes ? 'GPA' : 'SAT', position: 'insideBottomRight', offset: -10, fill: '#64748b', fontSize: 11, fontFamily: 'JetBrains Mono', fontWeight: '900' }} />
+                  <YAxis type="number" dataKey={!swapAxes ? "sat" : "gpa"} domain={!swapAxes ? [1200, 1600] : [2.5, 4.0]} stroke="#484f58" fontSize={11} tick={{ fontFamily: 'JetBrains Mono' }} allowDataOverflow={true} label={{ value: !swapAxes ? 'SAT' : 'GPA', angle: -90, position: 'insideLeft', offset: 10, fill: '#64748b', fontSize: 11, fontFamily: 'JetBrains Mono', fontWeight: '900' }} />
                   {boundaryVal !== null && (
-                    <ReferenceLine y={boundaryVal} stroke="#3b82f6" strokeDasharray="4 4" strokeWidth={1.5} label={{ position: 'right', value: t.decisionBoundary, fill: '#3b82f6', fontSize: 9, fontWeight: '900', letterSpacing: '0.1em' }} />
+                    <ReferenceLine y={boundaryVal} stroke="#3b82f6" strokeDasharray="4 4" strokeWidth={1.5} label={{ position: 'right', value: t.decisionBoundary, fill: '#3b82f6', fontSize: 11, fontWeight: '900', letterSpacing: '0.1em' }} />
                   )}
 
                   {/* Scientific Projections */}
@@ -627,7 +637,7 @@ const App = () => {
                           position: 'top',
                           value: !swapAxes ? originalStudent.gpa.toFixed(2) : Math.round(originalStudent.sat),
                           fill: '#3b82f6',
-                          fontSize: 8,
+                          fontSize: 10,
                           fontFamily: 'JetBrains Mono',
                           fontWeight: 'bold'
                         }}
@@ -641,7 +651,7 @@ const App = () => {
                           position: 'right',
                           value: !swapAxes ? Math.round(originalStudent.sat) : originalStudent.gpa.toFixed(2),
                           fill: '#3b82f6',
-                          fontSize: 8,
+                          fontSize: 10,
                           fontFamily: 'JetBrains Mono',
                           fontWeight: 'bold'
                         }}
@@ -651,7 +661,11 @@ const App = () => {
 
                   <Scatter
                     data={data}
-                    onClick={(e) => e && e.id !== undefined && setSelectedId(e.id)}
+                    onClick={(e) => {
+                      if (e && e.id !== undefined) {
+                        setSelectedId(prev => (prev === e.id ? null : e.id));
+                      }
+                    }}
                   >
                     {data.map((entry, index) => {
                       const pred = isAdmitted(entry);
@@ -678,29 +692,37 @@ const App = () => {
                   </Scatter>
 
                   {/* Trajectory Line */}
-                  <Scatter
-                    data={trajectoryData}
-                    line={{
-                      stroke: isCrossed ? '#fbbf24' : '#3b82f6',
-                      strokeWidth: 2,
-                      strokeDasharray: '5 5',
-                      filter: isCrossed ? 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.6))' : 'none'
-                    }}
-                    shape={() => null}
-                    opacity={checkMatch(originalStudent) ? 1 : 0.15}
-                  />
+                  {selectedId !== null && (
+                    <Scatter
+                      data={trajectoryData}
+                      line={{
+                        stroke: isCrossed ? '#fbbf24' : '#3b82f6',
+                        strokeWidth: 2,
+                        strokeDasharray: '5 5',
+                        filter: isCrossed ? 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.6))' : 'none'
+                      }}
+                      shape={() => null}
+                      opacity={checkMatch(originalStudent) ? 1 : 0.15}
+                      style={{ pointerEvents: 'none' }}
+                    />
+                  )}
 
                   {/* Current CounterLens Point (Larger/Glowing) */}
-                  <Scatter data={[trajectoryData[1]]}>
-                    <Cell
-                      fill={isAdmitted(cfProfile) ? COLORS.admit : COLORS.reject}
-                      stroke="white"
-                      strokeWidth={3}
-                      className={checkMatch(originalStudent) && isCrossed ? 'animate-pulse' : ''}
-                      opacity={checkMatch(originalStudent) ? 1 : 0.15}
-                      style={{ filter: checkMatch(originalStudent) ? 'drop-shadow(0 0 10px rgba(255,255,255,0.4))' : 'none' }}
-                    />
-                  </Scatter>
+                  {selectedId !== null && cfProfile && (
+                    <Scatter data={[trajectoryData[1]]}>
+                      <Cell
+                        fill={isAdmitted(cfProfile) ? COLORS.admit : COLORS.reject}
+                        stroke="white"
+                        strokeWidth={3}
+                        className={checkMatch(originalStudent) && isCrossed ? 'animate-pulse' : ''}
+                        opacity={checkMatch(originalStudent) ? 1 : 0.15}
+                        style={{
+                          filter: checkMatch(originalStudent) ? 'drop-shadow(0 0 10px rgba(255,255,255,0.4))' : 'none',
+                          pointerEvents: 'none'
+                        }}
+                      />
+                    </Scatter>
+                  )}
 
                   {/* Margin Shortest Path Line (Original) */}
                   {selectedId !== null && originalStudent && marginStats && (
@@ -712,11 +734,12 @@ const App = () => {
                       line={{ stroke: '#3b82f6', strokeWidth: 1, strokeDasharray: '3 3', opacity: 0.4 }}
                       shape={() => null}
                       opacity={checkMatch(originalStudent) ? 1 : 0.15}
+                      style={{ pointerEvents: 'none' }}
                     />
                   )}
 
                   {/* Margin Shortest Path Line (Counterfactual) */}
-                  {cfProfile && cfMarginStats && (
+                  {selectedId !== null && cfProfile && cfMarginStats && (
                     <Scatter
                       data={[
                         { gpa: cfProfile.gpa, sat: cfProfile.sat },
@@ -725,6 +748,7 @@ const App = () => {
                       line={{ stroke: '#fbbf24', strokeWidth: 1, strokeDasharray: '2 2', opacity: 0.6 }}
                       shape={() => null}
                       opacity={checkMatch(originalStudent) ? 1 : 0.15}
+                      style={{ pointerEvents: 'none' }}
                     />
                   )}
                 </ScatterChart>
@@ -732,24 +756,27 @@ const App = () => {
             </div>
           </div>
 
-          <div className="bg-[#161b22] border border-slate-800 rounded-2xl glass-card p-4 h-[35%] relative shadow-inner aurora-border flex flex-col gap-3">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-2 flex-shrink-0">
-              <div className="flex items-center gap-2 text-[12px] font-black text-slate-400 uppercase tracking-widest">
-                <BarChart3 className="w-4 h-4 text-purple-500" /> {t.slices}
+          <div className="bg-[#161b22] border border-slate-800 rounded-2xl glass-card p-4 h-[31%] relative shadow-inner aurora-border flex flex-col gap-3">
+            <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-1 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 bg-purple-500/20 rounded-lg border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
+                  <BarChart3 className="w-4 h-4 text-purple-400" />
+                </div>
+                <h2 className="text-sm font-black text-white uppercase tracking-[0.15em]">{t.slices}</h2>
               </div>
-              <div className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-mono font-black border border-slate-700 uppercase">Global Pool (N={INITIAL_POOL.length})</div>
+              <div className="px-2 py-0.5 rounded bg-slate-800/60 text-[10px] text-slate-400 font-mono font-black border border-white/5 uppercase">Global Pool (N={INITIAL_POOL.length})</div>
             </div>
             <div className="flex-1 min-h-0">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.groupStats} margin={{ top: 10, right: 30, bottom: 20, left: 30 }} onClick={(e) => { if (e && e.activeLabel) setFilterMode(prev => (prev?.type === 'slice' && prev?.value === e.activeLabel) ? null : { type: 'slice', value: e.activeLabel }); }}>
+                <BarChart data={stats.groupStats} margin={{ top: 25, right: 30, bottom: 5, left: 30 }} onClick={(e) => { if (e && e.activeLabel) setFilterMode(prev => (prev?.type === 'slice' && prev?.value === e.activeLabel) ? null : { type: 'slice', value: e.activeLabel }); }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#21262d" vertical={false} />
-                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} tick={{ fontFamily: 'JetBrains Mono', fontWeight: 'bold' }} interval={0} axisLine={false} />
-                  <YAxis hide domain={[0, 100]} />
+                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tick={{ fontFamily: 'JetBrains Mono', fontWeight: 'bold' }} interval={0} axisLine={false} />
+                  <YAxis hide domain={[0, 115]} />
                   <Bar dataKey="rate" radius={[6, 6, 0, 0]} fill={COLORS.barDefault} isAnimationActive={false}>
                     {stats.groupStats.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={filterMode?.type === 'slice' && filterMode?.value === entry.name ? '#3b82f6' : COLORS.barDefault} opacity={filterMode?.type === 'slice' && filterMode?.value !== entry.name ? 0.3 : 1} />
                     ))}
-                    <LabelList dataKey="rate" position="top" content={(props) => { const { x, y, width, value, index } = props; const item = stats.groupStats[index]; return (<g className="font-mono font-black text-[9px] uppercase"><text x={x + width / 2} y={y - 12} textAnchor="middle" fill="#60a5fa">{value}%</text><text x={x + width / 2} y={y - 4} textAnchor="middle" fill="#475569" className="text-[7px]">({item.admitted}/{item.count})</text></g>); }} />
+                    <LabelList dataKey="rate" position="top" content={(props) => { const { x, y, width, value, index } = props; const item = stats.groupStats[index]; return (<g className="font-mono font-black text-xs uppercase"><text x={x + width / 2} y={y - 12} textAnchor="middle" fill="#60a5fa">{value}%</text><text x={x + width / 2} y={y - 4} textAnchor="middle" fill="#475569" className="text-[9px]">({item.admitted}/{item.count})</text></g>); }} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -758,122 +785,151 @@ const App = () => {
         </section>
         <section className="flex flex-col gap-3 min-h-0 overflow-hidden">
           {/* COUNTERFACTUAL EDITOR (Now in Right Column) */}
-          <div className={`bg-[#161b22] border-2 border-blue-500/30 rounded-2xl overflow-hidden flex flex-col h-[65%] shadow-xl aurora-border min-h-0 ${glassMode ? 'glass-card border-none' : ''}`}>
+          <div className={`bg-[#161b22] border-2 border-blue-500/30 rounded-2xl overflow-hidden flex flex-col h-[69%] shadow-xl aurora-border min-h-0 ${glassMode ? 'glass-card border-none' : ''}`}>
             <div className="p-4 flex flex-col min-h-0 h-full overflow-hidden bg-blue-500/[0.03]">
-              <div className="flex items-center justify-between border-b border-blue-500/20 pb-2 flex-shrink-0">
-                <div className="flex items-center gap-2 text-[12px] font-black text-blue-400 uppercase tracking-widest"><Target className="w-4 h-4" /> {t.editor}</div>
-                <button onClick={() => setExplainer('editor')} className="text-slate-700 hover:text-blue-400 transition-colors btn-tactile p-0.5"><HelpCircle className="w-[12px] h-[12px]" /></button>
+              <div className="flex items-center justify-between border-b border-blue-500/30 pb-3 mb-1 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 bg-blue-500/20 rounded-lg border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                    <Target className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <div className="text-sm font-black text-white uppercase tracking-[0.15em]">{t.editor}</div>
+                </div>
+                <button onClick={() => setExplainer('editor')} className="text-slate-500 hover:text-white transition-colors btn-tactile p-0.5"><HelpCircle className="w-4 h-4" /></button>
               </div>
 
-              <div className="flex-1 flex flex-col gap-4 pt-4 overflow-y-auto overflow-x-hidden no-scrollbar">
-                {/* Sliders Area (Vertical Stack for narrow column) */}
-                <div className="space-y-4">
-                  <div className="space-y-1 relative">
-                    <div className="flex justify-between text-[9px] font-black text-blue-400 uppercase tracking-widest">
-                      <span>GPA</span>
-                      <div className="flex items-center gap-1.5">
-                        {cfProfile.gpa !== originalStudent.gpa && (
-                          <span className={`text-[8px] ${cfProfile.gpa > originalStudent.gpa ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            {cfProfile.gpa > originalStudent.gpa ? '+' : ''}{(cfProfile.gpa - originalStudent.gpa).toFixed(2)}
-                          </span>
-                        )}
-                        <span className="font-mono bg-blue-500/10 px-1 rounded">{cfProfile.gpa.toFixed(2)}</span>
+              {selectedId !== null && cfProfile && originalStudent ? (
+                <div className="flex-1 flex flex-col gap-4 pt-4 overflow-y-auto overflow-x-hidden no-scrollbar animate-in fade-in slide-in-from-right-4 duration-500">
+                  {/* Sliders Area (Vertical Stack for narrow column) */}
+                  <div className="space-y-4">
+                    <div className="space-y-1 relative">
+                      <div className="flex justify-between text-[11px] font-black text-blue-400 uppercase tracking-widest">
+                        <span>GPA</span>
+                        <div className="flex items-center gap-1.5">
+                          {cfProfile.gpa !== originalStudent.gpa && (
+                            <span className={`text-[10px] ${cfProfile.gpa > originalStudent.gpa ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {cfProfile.gpa > originalStudent.gpa ? '+' : ''}{(cfProfile.gpa - originalStudent.gpa).toFixed(2)}
+                            </span>
+                          )}
+                          <span className="font-mono bg-blue-500/10 px-1 rounded">{cfProfile.gpa.toFixed(2)}</span>
+                        </div>
+                      </div>
+                      <div className="relative h-5 flex items-center">
+                        <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1 bg-slate-800 rounded-full"></div>
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 w-1 h-3 bg-slate-500/40 rounded-full z-0 transition-all duration-500 -translate-x-1/2"
+                          style={{ left: `${((originalStudent.gpa - 2) / 2) * 100}%` }}
+                        ></div>
+                        <input type="range" min="2.0" max="4.0" step="0.01" value={cfProfile.gpa} onChange={(e) => handleCfChange('gpa', parseFloat(e.target.value))} className="absolute inset-0 w-full bg-transparent appearance-none cursor-pointer z-10" />
                       </div>
                     </div>
-                    <div className="relative h-5 flex items-center">
-                      <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1 bg-slate-800 rounded-full"></div>
-                      <div
-                        className="absolute top-1/2 -translate-y-1/2 w-1 h-3 bg-slate-500/40 rounded-full z-0 transition-all duration-500 -translate-x-1/2"
-                        style={{ left: `${((originalStudent.gpa - 2) / 2) * 100}%` }}
-                      ></div>
-                      <input type="range" min="2.0" max="4.0" step="0.01" value={cfProfile.gpa} onChange={(e) => handleCfChange('gpa', parseFloat(e.target.value))} className="absolute inset-0 w-full bg-transparent appearance-none cursor-pointer z-10" />
+
+                    <div className="space-y-1 relative">
+                      <div className="flex justify-between text-[11px] font-black text-blue-400 uppercase tracking-widest">
+                        <span>SAT</span>
+                        <div className="flex items-center gap-1.5">
+                          {cfProfile.sat !== originalStudent.sat && (
+                            <span className={`text-[10px] ${cfProfile.sat > originalStudent.sat ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {cfProfile.sat > originalStudent.sat ? '+' : ''}{cfProfile.sat - originalStudent.sat}
+                            </span>
+                          )}
+                          <span className="font-mono bg-blue-500/10 px-1 rounded">{cfProfile.sat}</span>
+                        </div>
+                      </div>
+                      <div className="relative h-5 flex items-center">
+                        <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1 bg-slate-800 rounded-full"></div>
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 w-1 h-3 bg-slate-500/40 rounded-full z-0 transition-all duration-500 -translate-x-1/2"
+                          style={{ left: `${((originalStudent.sat - 800) / 800) * 100}%` }}
+                        ></div>
+                        <input type="range" min="800" max="1600" step="10" value={cfProfile.sat} onChange={(e) => handleCfChange('sat', parseInt(e.target.value))} className="absolute inset-0 w-full bg-transparent appearance-none cursor-pointer z-10" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        { key: 'isAthlete', label: t.athlete, isBool: true },
+                        { key: 'isFirstGen', label: t.firstGen, isBool: true },
+                        { key: 'gender', label: formatVal(cfProfile.gender, 'gender'), isGender: true },
+                        { key: 'isResident', label: t.resident, isBool: true }
+                      ].map((btn) => {
+                        const isDirty = cfProfile[btn.key] !== originalStudent[btn.key];
+                        let colorClass = 'bg-slate-800/40 border-slate-700/30 text-slate-500';
+                        if (isDirty) {
+                          const isGain = cfProfile[btn.key] === true || (btn.isGender && cfProfile.gender === 'Female');
+                          colorClass = isGain ? 'bg-emerald-600/20 border-emerald-500/50 text-emerald-400 shadow-lg shadow-emerald-500/10' : 'bg-rose-600/20 border-rose-500/50 text-rose-400 shadow-lg shadow-rose-500/10';
+                        }
+                        return (
+                          <button key={btn.key} onClick={() => btn.isGender ? handleCfChange('gender', cfProfile.gender === 'Male' ? 'Female' : 'Male') : handleCfChange(btn.key, !cfProfile[btn.key])}
+                            className={`py-1.5 px-1 rounded-lg text-[10px] font-black border transition-all active:scale-92 uppercase tracking-tight btn-tactile ${colorClass}`}>
+                            {btn.isBool ? `${btn.label}: ${cfProfile[btn.key] ? t.yes : t.no}` : btn.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <div className="space-y-1 relative">
-                    <div className="flex justify-between text-[9px] font-black text-blue-400 uppercase tracking-widest">
-                      <span>SAT</span>
-                      <div className="flex items-center gap-1.5">
-                        {cfProfile.sat !== originalStudent.sat && (
-                          <span className={`text-[8px] ${cfProfile.sat > originalStudent.sat ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            {cfProfile.sat > originalStudent.sat ? '+' : ''}{cfProfile.sat - originalStudent.sat}
-                          </span>
-                        )}
-                        <span className="font-mono bg-blue-500/10 px-1 rounded">{cfProfile.sat}</span>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between px-3 py-2 bg-indigo-500/5 border border-indigo-500/15 rounded-xl group relative overflow-hidden">
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-black text-indigo-400 uppercase tracking-widest leading-none mb-1">{t.margin}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] text-slate-500 font-bold uppercase">ORIG: {marginStats?.margin || "0.00"}</span>
+                          {cfMarginStats && (
+                            <span className={`text-[10px] font-black ${Number(cfMarginStats.margin) >= Number(marginStats?.margin || 0) ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {Number(cfMarginStats.margin) >= Number(marginStats?.margin || 0) ? '↑' : '↓'} {(Math.abs(Number(cfMarginStats.margin) - Number(marginStats?.margin || 0))).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-sm font-mono font-black text-indigo-400">{cfMarginStats?.margin || "0.00"}</span>
                       </div>
                     </div>
-                    <div className="relative h-5 flex items-center">
-                      <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1 bg-slate-800 rounded-full"></div>
-                      <div
-                        className="absolute top-1/2 -translate-y-1/2 w-1 h-3 bg-slate-500/40 rounded-full z-0 transition-all duration-500 -translate-x-1/2"
-                        style={{ left: `${((originalStudent.sat - 800) / 800) * 100}%` }}
-                      ></div>
-                      <input type="range" min="800" max="1600" step="10" value={cfProfile.sat} onChange={(e) => handleCfChange('sat', parseInt(e.target.value))} className="absolute inset-0 w-full bg-transparent appearance-none cursor-pointer z-10" />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {[
-                      { key: 'isAthlete', label: t.athlete, isBool: true },
-                      { key: 'isFirstGen', label: t.firstGen, isBool: true },
-                      { key: 'gender', label: formatVal(cfProfile.gender, 'gender'), isGender: true },
-                      { key: 'isResident', label: t.resident, isBool: true }
-                    ].map((btn) => {
-                      const isDirty = cfProfile[btn.key] !== originalStudent[btn.key];
-                      let colorClass = 'bg-slate-800/40 border-slate-700/30 text-slate-500';
-                      if (isDirty) {
-                        const isGain = cfProfile[btn.key] === true || (btn.isGender && cfProfile.gender === 'Female');
-                        colorClass = isGain ? 'bg-emerald-600/20 border-emerald-500/50 text-emerald-400 shadow-lg shadow-emerald-500/10' : 'bg-rose-600/20 border-rose-500/50 text-rose-400 shadow-lg shadow-rose-500/10';
-                      }
-                      return (
-                        <button key={btn.key} onClick={() => btn.isGender ? handleCfChange('gender', cfProfile.gender === 'Male' ? 'Female' : 'Male') : handleCfChange(btn.key, !cfProfile[btn.key])}
-                          className={`py-1.5 px-1 rounded-lg text-[8px] font-black border transition-all active:scale-92 uppercase tracking-tight btn-tactile ${colorClass}`}>
-                          {btn.isBool ? `${btn.label}: ${cfProfile[btn.key] ? t.yes : t.no}` : btn.label}
-                        </button>
-                      );
-                    })}
+                    <div className={`flex-1 flex flex-col justify-center items-center py-4 rounded-xl border-2 transition-all duration-700 relative overflow-hidden animate-soft-breath ${isAdmitted(cfProfile) ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-rose-500/10 border-rose-500/30 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]'} ${isAdmitted(originalStudent) !== isAdmitted(cfProfile) ? 'animate-fate-flip' : ''}`}>
+                      {isAdmitted(originalStudent) !== isAdmitted(cfProfile) && (
+                        <div className="absolute top-1 right-1 flex items-center gap-1 bg-amber-500 text-white px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter animate-pulse">
+                          <Sparkles className="w-2 h-2" /> {t.fateDelta}
+                        </div>
+                      )}
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 opacity-60">SIMULATED {t.fate}</span>
+                      <div className="text-2xl font-black italic uppercase tracking-tighter mb-1">{isAdmitted(cfProfile) ? t.admit : t.reject}</div>
+                      <div className="text-[11px] font-mono font-black opacity-80 border-t border-current/20 pt-1 mt-1 w-[80%] text-center">
+                        SCORE: {calcScore(cfProfile, weights).toFixed(1)} / {threshold}.0
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between px-3 py-2 bg-indigo-500/5 border border-indigo-500/15 rounded-xl group relative overflow-hidden">
-                    <div className="flex flex-col">
-                      <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest leading-none mb-1">{t.margin}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[7px] text-slate-500 font-bold uppercase">ORIG: {marginStats?.margin || "0.00"}</span>
-                        {cfMarginStats && (
-                          <span className={`text-[8px] font-black ${Number(cfMarginStats.margin) >= Number(marginStats?.margin || 0) ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            {Number(cfMarginStats.margin) >= Number(marginStats?.margin || 0) ? '↑' : '↓'} {(Math.abs(Number(cfMarginStats.margin) - Number(marginStats?.margin || 0))).toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-xs font-mono font-black text-indigo-400">{cfMarginStats?.margin || "0.00"}</span>
-                    </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-4 animate-in fade-in zoom-in-95 duration-1000">
+                  <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center border border-blue-500/20">
+                    <Fingerprint className="w-8 h-8 text-blue-400/50" />
                   </div>
-
-                  <div className={`flex-1 flex flex-col justify-center items-center py-4 rounded-xl border-2 transition-all duration-700 relative overflow-hidden animate-soft-breath ${isAdmitted(cfProfile) ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-rose-500/10 border-rose-500/30 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]'} ${isAdmitted(originalStudent) !== isAdmitted(cfProfile) ? 'animate-fate-flip' : ''}`}>
-                    {isAdmitted(originalStudent) !== isAdmitted(cfProfile) && (
-                      <div className="absolute top-1 right-1 flex items-center gap-1 bg-amber-500 text-white px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-tighter animate-pulse">
-                        <Sparkles className="w-2 h-2" /> {t.fateDelta}
-                      </div>
-                    )}
-                    <span className="text-[8px] font-black uppercase tracking-[0.2em] mb-1 opacity-60">SIMULATED {t.fate}</span>
-                    <div className="text-2xl font-black italic uppercase tracking-tighter mb-1">{isAdmitted(cfProfile) ? t.admit : t.reject}</div>
-                    <div className="text-[9px] font-mono font-black opacity-80 border-t border-current/20 pt-1 mt-1 w-[80%] text-center">
-                      SCORE: {calcScore(cfProfile, weights).toFixed(1)} / {threshold}.0
-                    </div>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-black text-slate-300 uppercase tracking-widest">{lang === 'zh' ? '准备就绪' : 'STANDBY'}</h4>
+                    <p className="text-xs text-slate-500 font-bold leading-relaxed uppercase max-w-[140px]">
+                      {lang === 'zh' ? '请在左侧可视化面板中点击一个样本进行反事实分析' : 'Select a sample data point to begin counterfactual simulation'}
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <div className="w-1 h-1 bg-blue-500/30 rounded-full"></div>
+                    <div className="w-1 h-1 bg-blue-500/30 rounded-full animate-pulse"></div>
+                    <div className="w-1 h-1 bg-blue-500/30 rounded-full"></div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
-          <div className="bg-[#161b22] border border-slate-800 rounded-2xl glass-card p-4 h-[35%] flex flex-col gap-4 shadow-xl aurora-border overflow-hidden">
-            <div className="flex justify-between items-center mb-1">
-              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none flex items-center gap-2"><Target className="w-3 h-3 text-emerald-500" /> {t.confusion}</p>
-              <button onClick={() => setExplainer('confusion')} className="text-slate-600 hover:text-blue-400 transition-colors btn-tactile p-0.5"><HelpCircle className="w-[11px] h-[11px]" /></button>
+          <div className="bg-[#161b22] border border-slate-800 rounded-2xl glass-card p-4 h-[31%] flex flex-col gap-4 shadow-xl aurora-border overflow-hidden">
+            <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-2">
+              <p className="text-sm font-black text-white uppercase tracking-[0.15em] leading-none flex items-center gap-3">
+                <div className="p-1.5 bg-emerald-500/20 rounded-lg border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                  <Target className="w-4 h-4 text-emerald-400" />
+                </div>
+                {t.confusion}
+              </p>
+              <button onClick={() => setExplainer('confusion')} className="text-slate-500 hover:text-white transition-colors btn-tactile p-0.5"><HelpCircle className="w-4 h-4" /></button>
             </div>
             <div className="grid grid-cols-2 gap-1.5 text-center font-mono flex-1 min-h-0 pt-1">
               {[
@@ -890,10 +946,10 @@ const App = () => {
                     className={`p-1.5 rounded border shadow-sm transition-all duration-300 cursor-pointer flex flex-col justify-center btn-tactile ${isActive ? `border-${m.c}-400 ring-4 ring-${m.c}-500/20 scale-[1.03]` : `border-${m.c}-500/10 hover:border-${m.c}-500/30`}`}
                     style={{ backgroundColor: isActive ? `rgba(${m.rgb}, 0.5)` : `rgba(${m.rgb}, ${Math.max(0.05, m.r / 150)})`, color: isActive ? 'white' : `rgba(${m.rgb}, 1)` }}
                   >
-                    <p className={`text-[9px] uppercase font-black leading-none mb-1 tracking-tighter`}>{m.l}</p>
+                    <p className={`text-[11px] uppercase font-black leading-none mb-1 tracking-tighter`}>{m.l}</p>
                     <div className="flex flex-col gap-0.5">
-                      <p className={`text-sm font-black ${isActive ? 'text-white' : 'text-slate-200'} leading-none`}>{m.v}</p>
-                      <p className={`text-[9px] font-bold ${isActive ? 'text-white/80' : `text-slate-200/60`} leading-none`}>{m.r}%</p>
+                      <p className={`text-base font-black ${isActive ? 'text-white' : 'text-slate-200'} leading-none`}>{m.v}</p>
+                      <p className={`text-xs font-bold ${isActive ? 'text-white/80' : `text-slate-200/60`} leading-none`}>{m.r}%</p>
                     </div>
                   </button>
                 );
