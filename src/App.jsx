@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import './index.css';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -24,8 +24,20 @@ const COLORS = {
   barDefault: '#6366f1'
 };
 
+const SCENARIOS = [
+  { id: 'merit', weights: { gpa: 45, sat: 45, athlete: 5, firstGen: 0, gender: 0, resident: 5 }, threshold: 60, icon: 'Target' },
+  { id: 'holistic', weights: { gpa: 25, sat: 25, athlete: 15, firstGen: 15, gender: 10, resident: 10 }, threshold: 45, icon: 'Users' },
+  { id: 'diversity', weights: { gpa: 15, sat: 15, athlete: 10, firstGen: 30, gender: 20, resident: 10 }, threshold: 38, icon: 'Sparkles' },
+  { id: 'athletic', weights: { gpa: 15, sat: 15, athlete: 60, firstGen: 5, gender: 0, resident: 5 }, threshold: 50, icon: 'Activity' }
+];
+
 const TRANSLATIONS = {
   en: {
+    scenarios: "Demo Scenarios",
+    scenarioMerit: "Academic Merit",
+    scenarioHolistic: "Holistic Review",
+    scenarioDiversity: "Diversity/Equity",
+    scenarioAthletic: "Sports Priority",
     title: "CounterLens",
     accuracy: "Model Accuracy",
     params: "Parameters",
@@ -76,6 +88,11 @@ const TRANSLATIONS = {
     editorExplainer: "The Editor enables you to manipulate features to see 'what if' the inputs were different. This helps in understanding the model's decision boundaries and sensitivity."
   },
   zh: {
+    scenarios: "演示预设方案",
+    scenarioMerit: "学术优先",
+    scenarioHolistic: "综合评估",
+    scenarioDiversity: "多样化/公平",
+    scenarioAthletic: "体育专长",
     title: "CounterLens",
     accuracy: "模型准确度",
     params: "模型参数调节",
@@ -83,7 +100,7 @@ const TRANSLATIONS = {
     weights: "特征权重 (%)",
     gpa: "GPA", sat: "SAT", athlete: "运动员", firstGen: "一代生", gender: "性别权重 (偏向女性)", resident: "本州居民",
     visualizer: "反事实可视化 (Visualizer)",
-    editor: "反事实编辑 (Editor)",
+    editor: "反事实编辑器 (Editor)",
     slices: "数据集切片 (Slices)",
     axesInfo: "横轴: GPA | 纵轴: SAT",
     admit: "录取", reject: "拒绝",
@@ -94,7 +111,7 @@ const TRANSLATIONS = {
     normalize: "归一化", random: "随机", reset: "清零", default: "恢复默认",
     creditsTitle: "项目团队与机构",
     leadTitle: "首席研究员 (PI)",
-    contributorTitle: "研究员与开发者",
+    contributorTitle: "研究员与开发员",
     projectLead: "Prof. Rebecca Williams",
     contributor: "Eric Yang",
     datasetTribute: "数据集引用",
@@ -117,15 +134,20 @@ const TRANSLATIONS = {
     axisSwap: "轴向切换",
     margin: "决策余量 (L2 距离)",
     marginWiki: "https://zh.wikipedia.org/wiki/%E6%AC%A7%E5%87%A0%E9%87%8C%E5%BE%97%E8%B7%9D%E7%A6%BB",
-    marginExplainer: "决策余量（L2 距离）代表了学生在标准化特征空间中距离录取边界线的最短距离。余量越小，说明该判定越‘脆弱’，微小的档案改动（如 SAT 波动）就可能逆转录取结果。",
+    marginExplainer: "决策余量（L2 距离）代表了学生在标准化特征空间中距离录取边界线的最短距离。余量越小，说明该判定越'脆弱'，微小的档案改动（如 SAT 波动）就可能逆转录取结果。",
     weightsWiki: "https://zh.wikipedia.org/wiki/%E7%B3%BB%E6%95%B0",
     weightsExplainer: "权重定义了每个特征的相对重要性。设置较高的 GPA 权重意味着模型在评估时会优先考虑学术历史，而非 SAT 或身份背景等其他指标。",
     inspectorWiki: "https://zh.wikipedia.org/wiki/%E7%89%B9%E5%BE%81%E9%80%89%E6%8B%A9",
     inspectorExplainer: "特征审查面板允许你深入检查特定数据点的各项属性，并观察它们如何共同决定最终的录取逻辑。这是对个体判定的精确审计。",
     editorWiki: "https://zh.wikipedia.org/wiki/%E5%8F%8D%E4%BA%8B%E5%AE%9E%E6%9D%A1%E4%BB%B6",
-    editorExplainer: "反事实编辑器允许你模拟改变输入特征，观察‘如果当初不同’会如何影响判定。这能帮助你理解模型判定的敏感度和界限。"
+    editorExplainer: "反事实编辑器允许你模拟改变输入特征，观察'如果当初不同'会如何影响判定。这能帮助你理解模型判定的敏感度和界限。"
   },
   es: {
+    scenarios: "Escenarios de Demostración",
+    scenarioMerit: "Mérito Académico",
+    scenarioHolistic: "Revisión Integral",
+    scenarioDiversity: "Diversidad/Equidad",
+    scenarioAthletic: "Prioridad Deportiva",
     title: "CounterLens",
     accuracy: "Precisión",
     params: "Parámetros",
@@ -386,6 +408,12 @@ const App = () => {
     setWeights(newWeights);
   };
 
+  const applyScenario = (s) => {
+    setWeights({ ...s.weights });
+    setThreshold(s.threshold);
+    setIsMining(false);
+  };
+
   return (
     <div className={`h-screen ${glassMode ? 'glass-active' : 'bg-[#0d1117]'} text-slate-300 font-sans p-3 overflow-hidden flex flex-col relative selection:bg-blue-500/30 transition-colors duration-700`}>
       {glassMode && (
@@ -538,6 +566,32 @@ const App = () => {
             </div>
 
             <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+              {/* Scenarios: Demo Presets */}
+              <div className="bg-blue-500/[0.03] border border-blue-500/10 rounded-xl p-3 relative overflow-hidden group">
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500/40 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                <div className="space-y-2 relative z-10">
+                  <div className="flex items-center gap-1.5 text-xs font-black text-blue-400 uppercase tracking-widest mb-0.5">
+                    <Sparkles className="w-3.5 h-3.5" /> {t.scenarios}
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {SCENARIOS.map(s => {
+                      const Icon = s.icon === 'Target' ? Target : s.icon === 'Users' ? Users : s.icon === 'Sparkles' ? Sparkles : Activity;
+                      const isActive = Object.keys(s.weights).every(k => weights[k] === s.weights[k]) && threshold === s.threshold;
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => applyScenario(s)}
+                          className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all btn-tactile ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-800/40 text-slate-400 border border-slate-700/50 hover:text-white hover:bg-slate-700'}`}
+                        >
+                          <Icon className="w-3 h-3" />
+                          <span className="truncate">{t[`scenario${s.id.charAt(0).toUpperCase() + s.id.slice(1)}`]}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
               {/* Threshold: The Decision Gateway (Emphasized) */}
               <div className="bg-rose-500/[0.03] border border-rose-500/10 rounded-xl p-3 relative overflow-hidden group">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500/40"></div>
@@ -576,7 +630,7 @@ const App = () => {
                   {Object.keys(weights).map(k => (
                     <div key={k} className="space-y-0 relative group">
                       <div className="flex justify-between text-xs font-bold leading-none mb-0.5">
-                        <span className="text-slate-400 capitalize truncate max-w-[120px]">{t[k] || k}</span>
+                        <span className="text-slate-400 capitalize truncate">{t[k] || k}</span>
                         <span className="text-blue-400 font-mono">{weights[k]}%</span>
                       </div>
                       <input type="range" min="0" max="100" value={weights[k]} onChange={(e) => setWeights(p => ({ ...p, [k]: parseInt(e.target.value) }))} className="w-full h-1" />
