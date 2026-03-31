@@ -86,7 +86,10 @@ const TRANSLATIONS = {
     inspectorExplainer: "The Inspector allows you to examine a specific data point's attributes and see how they contribute to the final decision. It provides granular detail for individual audit.",
     editorWiki: "https://en.wikipedia.org/wiki/Counterfactual_conditional",
     slicesExplainer: "This panel shows how each demographic group is distributed across the admission scoring scale (0-100).\n\nHOW TO READ:\n\u2022 Each row = one group (e.g., Athletes, Female, 1st-Gen). A student can belong to multiple groups.\n\u2022 The mini histogram shows how many students in that group fall at each score level.\n\u2022 Green bars = students above the threshold (Admitted). Red bars = below threshold (Rejected).\n\u2022 The red dotted line (\u25bc) marks the current threshold.\n\u2022 Click a row to filter the scatter chart to only show that group.\n\nThis helps you quickly spot fairness issues: if one group has mostly red bars while another has mostly green, the model may be biased.",
-    marginExplainerNew: "Decision Margin measures how \u2018safe\u2019 a student's admission decision is.\n\nThink of it as: How far is this student from the pass/fail line?\n\u2022 Large margin = the decision is solid and won't easily change.\n\u2022 Small margin = the student is right on the edge. A tiny change in GPA or SAT could flip the result.\n\nThe number shown is the L2 (Euclidean) distance to the decision boundary. The arrow (\u2191/\u2193) shows whether your counterfactual edit moved the student further from or closer to the boundary.",
+    marginExplainerNew: "Decision Margin measures how \\u2018safe\\u2019 a student's admission decision is.\\n\\nThink of it as: How far is this student from the pass/fail line?\\n\\u2022 Large margin = the decision is solid and won't easily change.\\n\\u2022 Small margin = the student is right on the edge. A tiny change in GPA or SAT could flip the result.\\n\\nThe number shown is the L2 (Euclidean) distance to the decision boundary. The arrow (\\u2191/\\u2193) shows whether your counterfactual edit moved the student further from or closer to the boundary.",
+    visualizerWiki: "https://en.wikipedia.org/wiki/Scatter_plot",
+    visualizerExplainer: "The Visualizer shows all 100 students mapped on a scatter chart.\\n\\n\\u2022 Each dot = one student.\\n\\u2022 Green dots = Admitted. Red dots = Rejected.\\n\\u2022 X and Y axis show the student's GPA and SAT.\\n\\u2022 Blue dashed line = The current Decision Boundary (admission cutoff).\\n\\nTry dragging the sliders on the left to see how the boundary changes and how students cross the line from red to green (or vice versa)!",
+    scenariosExplainer: "Demo Scenarios are preset rules (policies) for admission.\\n\\nInstead of adjusting sliders manually, just click one of these buttons to instantly apply a specific philosophy:\\n\\u2022 Academic Merit: Focuses heavily on high GPA and SAT scores.\\n\\u2022 Diversity/Equity: Gives more weight to 1st-Generation students and underrepresented groups.\\n\\u2022 Athletic Priority: Massively rewards athletes regardless of strict academics.\\n\\nWatch how the main scatter chart immediately shifts who gets in based on the chosen scenario!",
     tutorialBtn: "GUIDE",
     tutorialWelcomeTitle: "Welcome to CounterLens",
     tutorialWelcomeDesc: "A guided tour will walk you through every module step by step. Ready to explore?",
@@ -171,7 +174,10 @@ const TRANSLATIONS = {
     inspectorExplainer: "特征审查面板允许你深入检查特定数据点的各项属性，并观察它们如何共同决定最终的录取逻辑。这是对个体判定的精确审计。",
     editorWiki: "https://zh.wikipedia.org/wiki/%E5%8F%8D%E4%BA%8B%E5%AE%9E%E6%9D%A1%E4%BB%B6",
     slicesExplainer: "这个面板展示了每个人口统计分组在录取评分轴（0-100）上的分布情况。\n\n怎么看：\n• 每行 = 一个分组（如运动员、女性、一代生）。一个学生可以同时属于多个分组。\n• 迷你柱状图展示该组学生在各分数段的人数。\n• 绿色 = 超过门槛（录取），红色 = 低于门槛（拒绝）。\n• 红色虚线（▼）标记当前门槛位置。\n• 点击某行可以在散点图中筛选只显示该组。\n\n它能帮你快速发现公平性问题：如果某组大部分是红色，而另一组大部分是绿色，说明模型可能存在偏见。",
-    marginExplainerNew: "决策余量衡量的是一个学生的录取决定有多「稳固」。\n\n可以这样理解：这个学生离及格线有多远？\n• 余量大 = 决定很稳固，不容易被改变。\n• 余量小 = 学生处于边缘位置，GPA 或 SAT 的微小变化就可能翻转结果。\n\n显示的数字是 L2（欧氏）距离。箭头（↑/↓）表示你的反事实修改是让学生离边界更远还是更近。",
+    marginExplainerNew: "\u51b3\u7b56\u4f59\u91cf\u8861\u91cf\u7684\u662f\u4e00\u4e2a\u5b66\u751f\u7684\u5f55\u53d6\u51b3\u5b9a\u6709\u591a\u300c\u7a33\u56fa\u300d\u3002\\n\\n\u53ef\u4ee5\u8fd9\u6837\u7406\u89e3\uff1a\u8fd9\u4e2a\u5b66\u751f\u79bb\u53ca\u683c\u7ebf\u6709\u591a\u8fdc\uff1f\\n\u2022 \u4f59\u91cf\u5927 = \u51b3\u5b9a\u5f88\u7a33\u56fa\uff0c\u4e0d\u5bb9\u6613\u88ab\u6539\u53d8\u3002\\n\u2022 \u4f59\u91cf\u5c0f = \u5b66\u751f\u5904\u4e8e\u8fb9\u7f18\u4f4d\u7f6e\uff0cGPA \u6216 SAT \u7684\u5fae\u5c0f\u53d8\u5316\u5c31\u53ef\u80fd\u7ffb\u8f6c\u7ed3\u679c\u3002\\n\\n\u663e\u793a\u7684\u6570\u5b57\u662f L2\uff08\u6b27\u6c0f\uff09\u8ddd\u79bb\u3002\u7bad\u5934\uff08\u2191/\u2193\uff09\u8868\u793a\u4f60\u7684\u53cd\u4e8b\u5b9e\u4fee\u6539\u662f\u8ba9\u5b66\u751f\u79bb\u8fb9\u754c\u66f4\u8fdc\u8fd8\u662f\u66f4\u8fd1\u3002",
+    visualizerWiki: "https://zh.wikipedia.org/wiki/%E6%95%A3%E7%82%B9%E5%9B%BE",
+    visualizerExplainer: "\u53ef\u89c6\u5316\u9762\u677f\u5c06\u6240\u6709 100 \u540d\u5b66\u751f\u663e\u793a\u5728\u6563\u70b9\u56fe\u4e0a\u3002\\n\\n\u2022 \u6bcf\u4e2a\u70b9 = \u4e00\u540d\u5b66\u751f\u3002\\n\u2022 \u7eff\u8272\u70b9 = \u5df2\u5f55\u53d6\u3002\u7ea2\u8272\u70b9 = \u88ab\u62d2\u7edd\u3002\\n\u2022 X\u8f74\u548cY\u8f74\u4ee3\u8868\u5b66\u751f\u7684 GPA \u548c SAT \u6210\u7ee9\u3002\\n\u2022 \u84dd\u8272\u865a\u7ebf = \u5f53\u524d\u7684\u5f55\u53d6\u5206\u754c\u7ebf\uff08Decision Boundary\uff09\u3002\\n\\n\u8bd5\u7740\u62d6\u52a8\u5de6\u4fa7\u7684\u6ed1\u5757\uff0c\u770b\u770b\u5206\u754c\u7ebf\u5982\u4f55\u79fb\u52a8\uff0c\u4ee5\u53ca\u5b66\u751f\u4eec\u662f\u5982\u4f55\u8de8\u8d8a\u8fb9\u754c\u4ece\u7ea2\u53d8\u7eff\uff08\u6216\u4ece\u7eff\u53d8\u7ea2\uff09\u7684\uff01",
+    scenariosExplainer: "\u6f14\u793a\u9884\u8bbe\u65b9\u6848\u662f\u9884\u5148\u8bbe\u5b9a\u597d\u7684\u5f55\u53d6\u89c4\u5219\uff08\u653f\u7b56\uff09\u3002\\n\\n\u4e0d\u9700\u8981\u624b\u52a8\u8c03\u8282\u6ed1\u5757\uff0c\u53ea\u9700\u70b9\u51fb\u8fd9\u4e9b\u6309\u94ae\u4e4b\u4e00\uff0c\u5c31\u80fd\u7acb\u5373\u5e94\u7528\u7279\u5b9a\u7684\u5f55\u53d6\u7406\u5ff5\uff1a\\n\u2022 \u5b66\u672f\u4f18\u5148\uff1a\u9ad8\u5ea6\u770b\u91cd GPA \u548c SAT \u6210\u7ee9\u3002\\n\u2022 \u591a\u6837\u5316/\u516c\u5e73\uff1a\u7ed9\u4e88\u4e00\u4ee3\u5927\u5b66\u751f\u548c\u5f31\u52bf\u7fa4\u4f53\u66f4\u5927\u7684\u6743\u91cd\u3002\\n\u2022 \u4f53\u80b2\u4f18\u5148\uff1a\u5927\u5e4b\u5bbd\u5bb9\u5b66\u672f\u6210\u7ee9\uff0c\u91cd\u5956\u8fd0\u52a8\u5458\u3002\\n\\n\u89c2\u5bdf\u9009\u62e9\u4e0d\u540c\u65b9\u6848\u540e\uff0c\u4e3b\u6563\u70b9\u56fe\u4e0a\u7684\u5f55\u53d6\u4eba\u7fa4\u4f1a\u53d1\u751f\u600e\u6837\u7684\u5de8\u53d8\uff01",
     editorExplainer: "反事实编辑器让你做「如果……会怎样」的假设实验。选中一个学生后，你可以修改 TA 的 GPA、SAT 或身份属性，观察录取结果是否反转。\n\n举例：一个被拒绝的学生，如果把性别改为女性（且女性有权重加分），TA 会被录取吗？这就是「反事实分析」——帮你发现模型对不同特征的敏感度。",
     tutorialBtn: "引导",
     tutorialWelcomeTitle: "欢迎使用 CounterLens",
@@ -247,6 +253,9 @@ const TRANSLATIONS = {
     confusionExplainer: "La matriz compara las decisiones del modelo con la verdad oculta:\n\n• TP: Admitido correctamente.\n• FP: Admitido por error.\n• FN: Rechazado injustamente — el caso más preocupante para la equidad.\n• TN: Rechazado correctamente.\n\nHaz clic en cualquier celda para resaltar esos estudiantes.",
     learnMore: "Wikipedia",
     axisSwap: "Cambiar Ejes",
+    visualizerWiki: "https://es.wikipedia.org/wiki/Diagrama_de_dispersi%C3%B3n",
+    visualizerExplainer: "El Visualizador muestra a los 100 estudiantes en un gr\\u00e1fico de dispersi\\u00f3n.\\n\\n\\u2022 Cado punto = un estudiante.\\n\\u2022 Verde = Admitido. Rojo = Rechazado.\\n\\u2022 La l\\u00ednea azul punteada marca el l\\u00edmite de admisi\\u00f3n.\\n\\n\\u00a1Mueva los controles para ver c\\u00f3mo cambian los resultados!",
+    scenariosExplainer: "Los Escenarios son reglas preestablecidas.\\n\\nAplicar un escenario cambia instant\\u00e1neamente la filosof\\u00eda de admisi\\u00f3n (ej. m\\u00e9rito acad\\u00e9mico vs diversidad). \\u00a1Observe c\\u00f3mo cambia el gr\\u00e1fico!",
     tutorialBtn: "GUÍA",
     tutorialWelcomeTitle: "Bienvenido a CounterLens",
     tutorialWelcomeDesc: "Una visita guiada le mostrará cada módulo paso a paso. ¿Listo para explorar?",
@@ -715,7 +724,9 @@ const App = () => {
                         explainer === 'margin' ? t.margin :
                           explainer === 'weights' ? t.weights :
                             explainer === 'slices' ? t.slices :
-                              t.editor}
+                              explainer === 'visualizer' ? t.visualizer :
+                                explainer === 'scenarios' ? t.scenarios :
+                                  t.editor}
                   </h3>
                 </div>
                 <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 max-h-[50vh] overflow-y-auto no-scrollbar">
@@ -725,7 +736,9 @@ const App = () => {
                         explainer === 'margin' ? t.marginExplainerNew :
                           explainer === 'weights' ? t.weightsExplainer :
                             explainer === 'slices' ? t.slicesExplainer :
-                              t.editorExplainer}
+                              explainer === 'visualizer' ? t.visualizerExplainer :
+                                explainer === 'scenarios' ? t.scenariosExplainer :
+                                  t.editorExplainer}
                   </p>
                 </div>
                 <div className="pt-2 flex justify-between items-center">
@@ -733,8 +746,9 @@ const App = () => {
                     explainer === 'confusion' ? t.confusionWiki :
                       explainer === 'margin' ? t.marginWiki :
                         explainer === 'weights' ? t.weightsWiki :
-                          explainer === 'slices' ? '#' :
-                            t.editorWiki} target="_blank" className="flex items-center gap-2 text-xs font-bold text-blue-400 hover:underline"><ExternalLink className="w-4 h-4" /> {t.learnMore}</a>
+                          explainer === 'slices' || explainer === 'scenarios' ? '#' :
+                            explainer === 'visualizer' ? t.visualizerWiki :
+                              t.editorWiki} target="_blank" className="flex items-center gap-2 text-xs font-bold text-blue-400 hover:underline"><ExternalLink className="w-4 h-4" /> {t.learnMore}</a>
                   <button onClick={() => setExplainer(null)} className="px-8 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-black uppercase transition-all btn-tactile btn-primary-tactile">OK</button>
                 </div>
               </div>
@@ -812,8 +826,13 @@ const App = () => {
               <div ref={refScenarios} className="bg-blue-500/[0.03] border border-blue-500/10 rounded-xl p-3 relative overflow-hidden group">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500/40 opacity-50 group-hover:opacity-100 transition-opacity"></div>
                 <div className="space-y-2 relative z-10">
-                  <div className="flex items-center gap-1.5 text-xs font-black text-blue-400 uppercase tracking-widest mb-0.5">
-                    <Sparkles className="w-3.5 h-3.5" /> {t.scenarios}
+                  <div className="flex items-center justify-between mb-0.5">
+                    <div className="flex items-center gap-1.5 text-xs font-black text-blue-400 uppercase tracking-widest">
+                      <Sparkles className="w-3.5 h-3.5" /> {t.scenarios}
+                    </div>
+                    <button onClick={() => setExplainer('scenarios')} className="w-4 h-4 rounded-full bg-blue-500/10 border border-blue-400/30 flex items-center justify-center hover:bg-blue-400/20 transition-all cursor-pointer btn-tactile">
+                      <span className="text-[9px] font-black text-blue-400">?</span>
+                    </button>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5">
                     {SCENARIOS.map(s => {
@@ -895,7 +914,12 @@ const App = () => {
                     <div className="p-1.5 bg-indigo-500/20 rounded-lg border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
                       <Activity className="w-4 h-4 text-indigo-400" />
                     </div>
-                    {t.visualizer}
+                    <div className="flex items-center gap-2">
+                      {t.visualizer}
+                      <button onClick={() => setExplainer('visualizer')} className="w-5 h-5 rounded-full bg-slate-700/50 border border-slate-600 flex items-center justify-center hover:bg-slate-600/80 transition-all cursor-pointer btn-tactile">
+                        <span className="text-[11px] font-black text-slate-300">?</span>
+                      </button>
+                    </div>
                   </h3>
                   <button onClick={() => setSwapAxes(!swapAxes)} className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 text-xs font-black uppercase hover:bg-slate-700 transition-all active:scale-95 btn-tactile">
                     <RefreshCw className={`w-3 h-3 ${swapAxes ? 'rotate-180' : ''} transition-transform`} /> {t.axisSwap}
